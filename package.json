@@ -41,7 +41,9 @@
       "pre-push": "if git-branch-is -i -q -r \"master|next|next-major|beta|alpha|^v\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$\"; then npm run test; fi"
     }
   },
-  "dependencies": {},
+  "dependencies": {
+    "lodash": "^4.17.15"
+  },
   "devDependencies": {
     "@angular/compiler": "^8.2.14",
     "@angular/compiler-cli": "^8.2.14",

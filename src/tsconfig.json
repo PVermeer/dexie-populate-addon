@@ -5,5 +5,10 @@
     "declaration": false,
     "removeComments": false
   },
-  "files": ["index.ts"]
+  "files": [
+    "index.ts"
+  ],
+  "include": [
+    "../src"
+  ]
 }

@@ -1,23 +1,13 @@
 // tslint:disable: space-before-function-paren
-// tslint:disable: object-literal-shorthand
-import { Dexie } from 'dexie';
-
-type TableExtended = Dexie.Table<any, any> & {
-};
-// type CollectionExtended = Dexie.Collection<any, any> & {
-//     _ctx: {
-//         table: Dexie.Table<any, any>;
-//     };
-// };
+import Dexie from 'dexie';
+import { ModifiedKeysTable } from './schema-parser';
+import { TablePopulate } from './populate.class';
 
 /** @internal */
-export function addGet(db: Dexie) {
+export function addPopulate(db: Dexie, relationalSchema: ModifiedKeysTable) {
 
-    Object.defineProperty(db.Table.prototype.get, 'populate', {
-        value: function (
-            this: TableExtended,
-        ) {
-
-        }
+    Object.defineProperty(db.Table.prototype, 'populate', {
+        value(this: Dexie.Table<any, any>) { return new TablePopulate(db, this, relationalSchema); }
     });
+
 }

@@ -1,1 +1,1 @@
-export { dexieRxjs } from './dexie-rxjs';
+export { populate } from './populate';

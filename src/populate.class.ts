@@ -1,8 +1,8 @@
 // tslint:disable: unified-signatures
-import Dexie, { ThenShortcut, IndexableType } from 'dexie';
 import 'dexie';
-import { ModifiedKeysTable, ModifiedKeys } from './schema-parser';
+import Dexie, { IndexableType } from 'dexie';
 import { cloneDeep } from 'lodash';
+import { ModifiedKeysTable } from './schema-parser';
 
 interface MappedIds {
     [targetTable: string]: {
@@ -14,23 +14,32 @@ interface MappedIds {
     };
 }
 
-class Populated<T> {
+export class Populate<T> {
 
     private _populated: T[];
 
-    public original() { return this._records; }
-    public populated() { return this._populated; }
+    get populated() {
+        return (async () => {
+            if (!this._populated) { await this.populateRecords(); }
+            return this._populated;
+        })();
+    }
 
-    public async construct() {
+    public async populateRecords() {
+
+        const records = await this._records;
+
+        const populated = cloneDeep(records);
+        const schema = this._relationalSchema[this._table.name];
 
         // Collect all target id's per target table per target key to optimise db queries.
-        const mappedIds = this._records.reduce<MappedIds>((acc, record, index) => {
+        const mappedIds = records.reduce<MappedIds>((acc, record, index) => {
 
             // Gather all id's per target key
             Object.entries(record).forEach(([key, entry]) => {
 
-                if (!this._relationalSchema[key]) { return; }
-                const { targetTable, targetKey } = this._relationalSchema[key];
+                if (!schema[key]) { return; }
+                const { targetTable, targetKey } = schema[key];
 
                 if (!acc[targetTable]) { acc[targetTable] = {}; }
                 if (!acc[targetTable][targetKey]) { acc[targetTable][targetKey] = []; }
@@ -60,15 +69,14 @@ class Populated<T> {
                     // Set the result on the populated record
                     .then(results => {
                         entries.forEach(entry => {
-                            const recordKey = this._records[entry.index][entry.key];
+                            const recordKey = records[entry.index][entry.key];
 
                             const newRecordKey = Array.isArray(recordKey) ?
                                 results.filter(result => recordKey.includes(result[targetKey])) :
                                 results.find(result => result[targetKey] === recordKey) || null;
 
                             // Update the key with found records
-                            this._populated[entry.index][entry.key] = newRecordKey;
-                            console.log(recordKey);
+                            populated[entry.index][entry.key] = newRecordKey;
                         });
                     });
 
@@ -78,50 +86,15 @@ class Populated<T> {
             return acc;
         }, []));
 
-        console.log(this);
-        return this;
+        this._populated = populated;
+        return this._populated;
     }
 
     constructor(
-        private _records: T[],
+        private _records: Promise<T[]> | T[],
         private _db: Dexie,
-        private _relationalSchema: ModifiedKeys
-    ) {
-        this._populated = cloneDeep(_records);
-     }
-
-}
-
-export class TablePopulate<T, Key> {
-
-    private _relationalSchema: ModifiedKeys;
-
-    // --- Overloads
-    public async get(key: Key): Promise<Populated<T> | undefined>;
-    public async get<R>(key: Key, thenShortcut: ThenShortcut<T | undefined, R>): Promise<Populated<R>>;
-    public async get(equalityCriterias: { [key: string]: IndexableType }): Promise<Populated<T> | undefined>;
-    public async get<R>(
-        equalityCriterias: { [key: string]: IndexableType }, thenShortcut: ThenShortcut<T | undefined, R>
-    ): Promise<Populated<R>>;
-    // ---------
-
-    public async get<R>(
-        keyOrEqualityCriterias: Key | { [key: string]: IndexableType },
-        cb?: ThenShortcut<T | undefined, R>
-    ) {
-        // Types don't match because of missing full overload in Dexie.js, so any for now. Will PR a fix.
-        const get = await this._table.get(keyOrEqualityCriterias as any, cb as any);
-        if (!get) { return get; }
-
-        return new Populated([get], this._db, this._relationalSchema).construct();
-    }
-
-    constructor(
-        private _db: Dexie,
-        private _table: Dexie.Table<T, Key>,
-        relationalSchema: ModifiedKeysTable,
-    ) {
-        this._relationalSchema = relationalSchema[_table.name];
-    }
+        private _table: Dexie.Table<T, IndexableType>,
+        private _relationalSchema: ModifiedKeysTable
+    ) { }
 
 }

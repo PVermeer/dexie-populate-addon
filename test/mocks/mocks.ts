@@ -1,17 +1,29 @@
+// tslint:disable: no-non-null-assertion
 import Dexie from 'dexie';
 import faker from 'faker/locale/nl';
-import { populate } from '../../src/populate';
+import { populate, Ref } from '../../src/populate';
 
-export interface Friend {
+export class Friend {
     id?: number;
     testProp?: string;
+    age: number;
     hasAge?: boolean;
     firstName: string;
     lastName: string;
     shoeSize: number;
     customId: number;
     some?: { id: number; };
-    hasFriends: number[];
+    hasFriends: Ref<Friend[], number[]>;
+
+    doSomething() {
+        return void 0;
+    }
+
+    constructor(friend: OmitMethods<Friend>) {
+        Object.entries(friend).forEach(([key, value]) => {
+            this[key] = value;
+        });
+    }
 }
 
 type TestDatabaseType = Dexie & { friends: Dexie.Table<Friend, number> };
@@ -28,6 +40,7 @@ export const databasesPositive = [
                 this.version(1).stores({
                     friends: '++id, customId, firstName, lastName, shoeSize, age, hasFriends => friends.id'
                 });
+                this.friends.mapToClass(Friend);
             }
         }('TestDatabase')
     }
@@ -35,12 +48,15 @@ export const databasesPositive = [
 
 export const databasesNegative = [];
 
-export const methods: { desc: string, method: (db: TestDatabaseType) => (id: number) => Promise<Friend> }[] = [
-    {
-        desc: 'Table.get().populate()',
-        method: db => id => db.friends.populate().get(id).then(x => x.populated()[0])
-    }
-];
+export const methods: {
+    desc: string, method: (db: TestDatabaseType) =>
+        (id: number) => Promise<NonNullable<Unpacked<ReturnType<ReturnType<typeof db.friends.populate>['get']>>>>
+}[] = [
+        {
+            desc: 'Table.populate().get()',
+            method: db => id => db.friends.populate().get(id).then(x => x!)
+        }
+    ];
 
 export const mockFriends = (count: number = 5): Friend[] => {
     const friend = () => ({
@@ -51,5 +67,5 @@ export const mockFriends = (count: number = 5): Friend[] => {
         customId: faker.random.number({ min: 1000000, max: 9999999 }),
         hasFriends: []
     });
-    return new Array(count).fill(null).map(() => friend());
+    return new Array(count).fill(null).map(() => new Friend(friend()));
 };

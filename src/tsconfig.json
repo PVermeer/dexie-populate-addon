@@ -9,6 +9,7 @@
     "index.ts"
   ],
   "include": [
-    "../src"
+    "../src",
+    "../types"
   ]
 }

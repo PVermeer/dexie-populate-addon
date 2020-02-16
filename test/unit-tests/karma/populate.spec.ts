@@ -1,6 +1,6 @@
 // tslint:disable: no-non-null-assertion
 import Dexie from 'dexie';
-import { databasesNegative, databasesPositive, Friend, methods, mockFriends } from '../../mocks/mocks';
+import { databasesPositive, Friend, methods, mockFriends } from '../../mocks/mocks';
 
 describe('Populate', () => {
     databasesPositive.forEach((database, _i) => {
@@ -43,30 +43,49 @@ describe('Populate', () => {
                             friend.hasFriends = [hasFriendId];
                             method = _method.method(db);
                         });
-                        it('should work', async () => {
-                            const test = await method(id);
-                            console.log(test);
+                        it('should be populated', async () => {
+                            const friendTest = mockFriends(1)[0];
+                            const test = await db.friends.populate().get(1).then(x => x!);
+                            test.doSomething();
+                            test.age = 4;
+                            test.firstName = 'sdfsdf';
+                            const hasFriends = test!.hasFriends!;
+                            hasFriends[0].id = 56;
+                            test.hasFriends.push(friendTest!);
+                            test.hasFriends = [friend];
+                            test.hasFriends[0] = friend;
+                            test.hasFriends[0].age = 8;
+                            const test2 = await db.friends.get(1).then(x => x!);
+                            test2.hasFriends[0] = 1;
+                            test2.hasFriends = [4];
+                            const getFriend = await method(id);
+                            console.log(getFriend);
+                            // expect(getFriend).toEqual(new Friend({
+                            //     ...getFriend, hasFriends: [hasFriend as unknown as number]
+                            // }));
                         });
                     });
                 });
             });
         });
     });
-    databasesNegative.forEach(database => {
-        // describe(database.desc, () => {
-        //     let db: ReturnType<typeof database.db>;
-        //     beforeEach(async () => {
-        //         db = database.db(Dexie);
-        //     });
-        //     afterEach(async () => {
-        //         await db.delete();
-        //     });
-        //     it('should throw when compound / multi index is used', async () => {
-        //         await expectAsync(db.open()).toBeRejectedWithError('Compound or multi indices are not (yet) supported in combination with Dexie RxJs Addon');
-        //         expect(db.isOpen()).toBeFalse();
-        //     });
-        // });
-    });
+    // databasesNegative.forEach(database => {
+    // describe(database.desc, () => {
+    //     let db: ReturnType<typeof database.db>;
+    //     beforeEach(async () => {
+    //         db = database.db(Dexie);
+    //     });
+    //     afterEach(async () => {
+    //         await db.delete();
+    //     });
+    //     it('should throw when compound / multi index is used', async () => {
+    //         await expectAsync(db.open()).toBeRejectedWithError(
+    //              'Compound or multi indices are not (yet) supported in combination with Dexie RxJs Addon'
+    //         );
+    //         expect(db.isOpen()).toBeFalse();
+    //     });
+    // });
+    // });
 });
 
 // ========== Helper functions ===========

@@ -4,4 +4,4 @@ type Unpacked<T> =
     T extends Promise<infer W> ? W :
     never;
 
-type OmitMethods<T> = Pick<T, { [P in keyof T]: T[P] extends Function ? never : P; }[keyof T]>;
+type OmitMethods<T> = Pick<T, { [P in keyof T]: T[P] extends (...args: any[]) => any ? never : P; }[keyof T]>;

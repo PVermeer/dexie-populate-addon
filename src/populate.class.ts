@@ -2,7 +2,8 @@
 import 'dexie';
 import Dexie, { IndexableType } from 'dexie';
 import { cloneDeep } from 'lodash';
-import { ModifiedKeysTable } from './schema-parser';
+import { Ref } from './populate';
+import { RelationalDbSchema } from './schema-parser';
 
 interface MappedIds {
     [targetTable: string]: {
@@ -14,10 +15,23 @@ interface MappedIds {
     };
 }
 
+/**
+ * Overwrite the return type to the type as given in the Ref type after refs are populated.
+ */
+export type Populated<T> = {
+    [P in keyof T]: T[P] extends Ref<infer X, infer _Y, infer N> ?
+    N extends 'Ref' ?
+    X : T[P] : T[P]
+};
+
 export class Populate<T> {
 
-    private _populated: T[];
+    private _populated: Populated<T>[];
 
+    /**
+     * Get populated documents.
+     * @returns Memoized results.
+     */
     get populated() {
         return (async () => {
             if (!this._populated) { await this.populateRecords(); }
@@ -25,6 +39,10 @@ export class Populate<T> {
         })();
     }
 
+    /**
+     * Get populated documents.
+     * @returns Fresh results.
+     */
     public async populateRecords() {
 
         const records = await this._records;
@@ -34,6 +52,8 @@ export class Populate<T> {
 
         // Collect all target id's per target table per target key to optimise db queries.
         const mappedIds = records.reduce<MappedIds>((acc, record, index) => {
+
+            if (!record) { return acc; }
 
             // Gather all id's per target key
             Object.entries(record).forEach(([key, entry]) => {
@@ -69,14 +89,17 @@ export class Populate<T> {
                     // Set the result on the populated record
                     .then(results => {
                         entries.forEach(entry => {
-                            const recordKey = records[entry.index][entry.key];
+                            const record = records[entry.index];
+                            const popRecord = populated[entry.index];
+                            if (!record || !popRecord) { return; }
+                            const recordKey = record[entry.key];
 
                             const newRecordKey = Array.isArray(recordKey) ?
                                 results.filter(result => recordKey.includes(result[targetKey])) :
                                 results.find(result => result[targetKey] === recordKey) || null;
 
                             // Update the key with found records
-                            populated[entry.index][entry.key] = newRecordKey;
+                            popRecord[entry.key] = newRecordKey;
                         });
                     });
 
@@ -86,15 +109,15 @@ export class Populate<T> {
             return acc;
         }, []));
 
-        this._populated = populated;
+        this._populated = populated as Populated<T>[];
         return this._populated;
     }
 
     constructor(
-        private _records: Promise<T[]> | T[],
+        private _records: (any)[],
         private _db: Dexie,
-        private _table: Dexie.Table<T, IndexableType>,
-        private _relationalSchema: ModifiedKeysTable
+        private _table: Dexie.Table<any, any>,
+        private _relationalSchema: RelationalDbSchema
     ) { }
 
 }

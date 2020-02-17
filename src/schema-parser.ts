@@ -1,14 +1,14 @@
 export interface StoreSchemas { [tableName: string]: string | null; }
 
-export interface ModifiedKeys {
+export interface RelationalKeys {
     [prop: string]: {
         targetTable: string;
         targetKey: string;
     };
 }
 
-export interface ModifiedKeysTable {
-    [prop: string]: ModifiedKeys;
+export interface RelationalDbSchema {
+    [prop: string]: RelationalKeys;
 }
 
 export class SchemaParser {
@@ -18,14 +18,14 @@ export class SchemaParser {
     /**
      * Extract the relationial keys from the schema.
      */
-    public getRelationalKeys(): ModifiedKeysTable {
-        return Object.entries(this.schema).reduce<ModifiedKeysTable>((acc, [table, value]) => {
+    public getRelationalKeys(): RelationalDbSchema {
+        return Object.entries(this.schema).reduce<RelationalDbSchema>((acc, [table, value]) => {
             if (!value) { return acc; }
 
             const relationalKeys = value
                 .split(',')
                 .filter(x => x.includes('=>'))
-                .reduce<ModifiedKeys>((relObj, x) => {
+                .reduce<RelationalKeys>((relObj, x) => {
                     const split = x.split('=>').map(y => y.trim());
                     const [targetTable, targetKey] = split[1].split('.').map(y => y.trim());
                     return { ...relObj, [split[0]]: { targetTable, targetKey } };

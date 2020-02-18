@@ -1,6 +1,8 @@
 // tslint:disable: no-non-null-assertion
 import Dexie from 'dexie';
-import { Club, databasesPositive, Friend, mockClubs, mockFriends, originalMethods, populatedMethods } from '../../mocks/mocks';
+import { cloneDeep } from 'lodash-es';
+import { Populated } from '../../../src/populate.class';
+import { Club, databasesPositive, Friend, methods, Methods, mockClubs, mockFriends } from '../../mocks/mocks';
 
 describe('Populate', () => {
     databasesPositive.forEach((database, _i) => {
@@ -15,48 +17,12 @@ describe('Populate', () => {
             afterEach(async () => {
                 await db.delete();
             });
-            it('should not have type errors', async () => {
-                // Just some type matching, should not error in IDE or compilation
-                const friends = mockFriends(2);
-                const [friendTest] = mockFriends(1);
-                const [friend] = friends;
-                const clubs = mockClubs(2);
-                const [clubTest] = mockClubs(1);
-                const [club] = clubs;
-                const friendIds = await Promise.all(friends.map(x => db.friends.add(x)));
-                const clubIds = await Promise.all(clubs.map(x => db.clubs.add(x)));
-                await db.friends.update(friendIds[0], {
-                    hasFriends: [friendIds[1]],
-                    memberOf: [clubIds[1]]
-                });
-                const test = await db.friends.populate().get(1).then(x => x!);
-                test.doSomething();
-                test.age = 4;
-                test.firstName = 'sdfsdf';
-
-                const hasFriends = test!.hasFriends!;
-                hasFriends[0].id = 56;
-                test.hasFriends.push(friendTest!);
-                test.hasFriends = [friend];
-                test.hasFriends[0] = friend;
-                test.hasFriends[0].age = 8;
-
-                const memberOf = test!.memberOf!;
-                memberOf[0].id = 47;
-                test.memberOf.push(clubTest!);
-                test.memberOf = [club];
-                test.memberOf[0] = club;
-                test.memberOf[0].description = 'sdfsdfsdf';
-
-                const test2 = await db.friends.get(1).then(x => x);
-                test2!.hasFriends[0] = 1;
-                expect(true).toBeTrue();
-            });
             describe('Methods', () => {
-                [...populatedMethods, ...originalMethods].forEach((_method, _j) => {
+                methods.forEach((_method, _j) => {
                     // if (_j !== 2) { return; }
-                    let methodPop: ReturnType<typeof _method.method>;
+                    let method: Methods;
                     let friend: Friend;
+                    let friendPop: Populated<Friend>;
                     let id: number;
                     let updateId: number;
 
@@ -68,7 +34,7 @@ describe('Populate', () => {
 
                     describe(_method.desc, () => {
                         beforeEach(async () => {
-                            methodPop = _method.method(db);
+                            method = _method.method;
                             [friend, ...hasFriends] = mockFriends();
                             clubs = mockClubs();
 
@@ -82,43 +48,61 @@ describe('Populate', () => {
                             clubIds = await Promise.all(clubs.map(x => db.clubs.add(x)));
                             await db.friends.update(updateId, { memberOf: clubIds });
                             friend.memberOf = clubIds;
+
+                            friendPop = cloneDeep(friend) as Populated<Friend>;
+                            friendPop.hasFriends = hasFriends;
+                            friendPop.memberOf = clubs;
                         });
-                        switch (_method.populated) {
-                            case true: {
-                                it('should be populated with friends', async () => {
-                                    const getFriend = await methodPop(id);
-                                    const expected = new Friend(getFriend as any);
-                                    expected.hasFriends = hasFriends as any;
-                                    expect(getFriend).toEqual(expected as any);
-                                    expect(getFriend.hasFriends.every((x: any) => x instanceof Friend)).toBeTrue();
-                                });
-                                it('should be populated with clubs', async () => {
-                                    const getFriend = await methodPop(id);
-                                    const expected = new Friend(getFriend as any);
-                                    expected.memberOf = clubs as any;
-                                    expect(getFriend).toEqual(expected as any);
-                                    expect(getFriend.memberOf.every((x: any) => x instanceof Club)).toBeTrue();
-                                });
-                                break;
-                            }
-                            case false: {
-                                it('should not be populated with friends', async () => {
-                                    const getFriend = await methodPop(id);
-                                    const expected = new Friend(getFriend as any);
-                                    expected.hasFriends = hasFriendIds;
-                                    expect(getFriend).toEqual(expected as any);
-                                    expect(getFriend.hasFriends.every((x: any) => !isNaN(x))).toBeTrue();
-                                });
-                                it('should not be populated with clubs', async () => {
-                                    const getFriend = await methodPop(id);
-                                    const expected = new Friend(getFriend as any);
-                                    expected.memberOf = clubIds;
-                                    expect(getFriend).toEqual(expected as any);
-                                    expect(getFriend.hasFriends.every((x: any) => !isNaN(x))).toBeTrue();
-                                });
-                                break;
-                            }
-                        }
+                        describe('Populated', () => {
+                            it('should be populated with friends', async () => {
+                                const getFriend = await db.friends.populate()[method](id);
+                                const expected = new Friend(getFriend as any);
+                                expected.hasFriends = hasFriends as any;
+                                expect(getFriend).toEqual(expected as any);
+                                expect(getFriend!.hasFriends.every((x: any) => x instanceof Friend)).toBeTrue();
+                            });
+                            it('should be populated with clubs', async () => {
+                                const getFriend = await db.friends.populate()[method](id);
+                                const expected = new Friend(getFriend as any);
+                                expected.memberOf = clubs as any;
+                                expect(getFriend).toEqual(expected as any);
+                                expect(getFriend!.memberOf.every((x: any) => x instanceof Club)).toBeTrue();
+                            });
+                            describe('ThenSchortcut', () => {
+                                if (_method.hasCb) {
+                                    it('should return the correct value', async () => {
+                                        const testCb = await db.friends.populate()[method](1, value => value!);
+                                        expect(testCb).toEqual(friendPop);
+                                    });
+                                    it('should return the changed value', async () => {
+                                        const testCb = await db.friends.populate()[method](1, () => 'string');
+                                        expect(testCb).toBe('string');
+
+                                        const testCb2 = await db.friends.populate()[method](1, value => {
+                                            value!.firstName = 'testieTest';
+                                            return value;
+                                        });
+                                        expect({ ...testCb2 }).toEqual({ ...friendPop, firstName: 'testieTest' });
+                                    });
+                                }
+                            });
+                        });
+                        describe('Normal', () => {
+                            it('should not be populated with friends', async () => {
+                                const getFriend = await db.friends[method](id);
+                                const expected = new Friend(getFriend as any);
+                                expected.hasFriends = hasFriendIds;
+                                expect(getFriend).toEqual(expected as any);
+                                expect(getFriend!.hasFriends.every((x: any) => !isNaN(x))).toBeTrue();
+                            });
+                            it('should not be populated with clubs', async () => {
+                                const getFriend = await db.friends[method](id);
+                                const expected = new Friend(getFriend as any);
+                                expected.memberOf = clubIds;
+                                expect(getFriend).toEqual(expected as any);
+                                expect(getFriend!.hasFriends.every((x: any) => !isNaN(x))).toBeTrue();
+                            });
+                        });
                     });
                 });
             });

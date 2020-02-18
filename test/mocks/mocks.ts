@@ -2,7 +2,6 @@
 import Dexie from 'dexie';
 import faker from 'faker/locale/nl';
 import { populate, Ref } from '../../src/populate';
-import { Populated } from '../../src/populate.class';
 
 export class Club {
     id?: number;
@@ -45,8 +44,6 @@ export class Friend {
     }
 }
 
-type TestDatabaseType = Dexie & { friends: Dexie.Table<Friend, number> };
-
 export const databasesPositive = [
     {
         desc: 'TestDatabase',
@@ -73,31 +70,18 @@ export const databasesPositive = [
 
 export const databasesNegative = [];
 
-export const populatedMethods: {
-    desc: string,
-    populated: boolean,
-    method: (db: TestDatabaseType) =>
-        (id: number) => Promise<Populated<Friend>>
+export type Methods = 'get';
+export const methods: {
+    desc: string;
+    hasCb: boolean;
+    method: Methods;
 }[] = [
-        {
-            desc: 'Table.populate().get()',
-            populated: true,
-            method: db => id => db.friends.populate().get(id).then(x => x!)
-        }
-    ];
-
-export const originalMethods: {
-    desc: string,
-    populated: boolean,
-    method: (db: TestDatabaseType) =>
-        (id: number) => Promise<Friend>
-}[] = [
-        {
-            desc: 'Table.get()',
-            populated: false,
-            method: db => id => db.friends.get(id).then(x => x!)
-        }
-    ];
+    {
+        desc: 'Table.get()',
+        hasCb: true,
+        method: 'get'
+    }
+];
 
 export const mockFriends = (count: number = 5): Friend[] => {
     const friend = () => new Friend({

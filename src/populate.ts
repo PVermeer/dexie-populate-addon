@@ -19,13 +19,6 @@ declare module 'dexie' {
     namespace Dexie {
 
         interface Table<T, Key> {
-
-            /** Add to get overloads, this should be the last type that exepts all. */
-            get<R = T>(
-                keyOrequalityCriterias: Key | { [key: string]: any },
-                thenShortcut?: ThenShortcut<T | undefined, R>
-            ): Promise<R | undefined>;
-
             /**
              * Use Table populate methods
              *

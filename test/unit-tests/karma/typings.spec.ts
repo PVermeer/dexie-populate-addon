@@ -18,7 +18,7 @@ describe('Typings', () => {
                 await db.delete();
             });
             it('should not have type errors', async () => {
-                // Just some type matching, should not error in IDE or compilation
+                // Just some type matching, should not error in IDE / compilation or test
                 const friends = mockFriends(2);
                 const [friendTest] = mockFriends(1);
                 const [friend] = friends;
@@ -37,41 +37,66 @@ describe('Typings', () => {
                 friendPop.hasFriends = [friends[1]];
                 friendPop.memberOf = [clubs[1]];
 
-                const test = await db.friends.populate().get(1).then(x => x!);
-                expect(test).toEqual(friendPop);
-                test.doSomething();
-                test.age = 4;
-                test.firstName = 'sdfsdf';
+                const populated = await Promise.all([
+                    db.friends.populate().get(1).then(x => x!),
+                    db.friends.populate().where(':id').equals(1).first().then(x => x!)
+                ]);
+                populated.forEach(async test => {
 
-                const hasFriends = test!.hasFriends!;
-                hasFriends[0].id = 56;
-                test.hasFriends.push(friendTest!);
-                test.hasFriends = [friendTest];
-                test.hasFriends[0] = friendTest;
-                test.hasFriends[0].age = 8;
+                    expect(test).toEqual(friendPop);
+                    test.doSomething();
+                    test.age = 4;
+                    test.firstName = 'sdfsdf';
 
-                const memberOf = test!.memberOf!;
-                memberOf[0].id = 47;
-                test.memberOf.push(clubTest!);
-                test.memberOf = [clubTest];
-                test.memberOf[0] = clubTest;
-                test.memberOf[0].description = 'sdfsdfsdf';
+                    const hasFriends = test!.hasFriends!;
+                    hasFriends[0].id = 56;
+                    test.hasFriends.push(friendTest!);
+                    test.hasFriends = [friendTest];
+                    test.hasFriends[0] = friendTest;
+                    test.hasFriends[0].age = 8;
 
-                const test2 = await db.friends.get(1).then(x => x);
-                expect(test2).toEqual(friend);
-                test2!.hasFriends[0] = 1;
+                    const memberOf = test!.memberOf!;
+                    memberOf[0].id = 47;
+                    test.memberOf.push(clubTest!);
+                    test.memberOf = [clubTest];
+                    test.memberOf[0] = clubTest;
+                    test.memberOf[0].description = 'sdfsdfsdf';
+                });
 
-                const testCb = await db.friends.get(1, value => {
+                const notPopulated = await Promise.all([
+                    db.friends.get(1).then(x => x!),
+                    db.friends.where(':id').equals(1).first().then(x => x!)
+                ]);
+                notPopulated.forEach(async test => {
+                    expect(test).toEqual(friend);
+                    test!.hasFriends[0] = 1;
+                });
+
+                // ===== Callbacks (thenSchortcuts) =====
+                const testCbGet = await db.friends.get(1, value => {
                     value!.hasFriends = [2];
                     return value;
                 });
-                expect(testCb).toEqual(friend);
+                expect(testCbGet).toEqual(friend);
 
-                const testCb2 = await db.friends.populate().get(1, value => {
+                const testCb2Get = await db.friends.populate().get(1, value => {
                     value!.hasFriends = [friends[1]];
                     return value;
                 });
-                expect(testCb2).toEqual(friendPop);
+                expect(testCb2Get).toEqual(friendPop);
+
+                const testCbWhere = await db.friends.where(':id').equals(1).first(value => {
+                    value!.hasFriends = [2];
+                    return value;
+                });
+                expect(testCbWhere).toEqual(friend);
+
+                const testCbWhere2 = await db.friends.populate().where(':id').equals(1).first(value => {
+                    value!.hasFriends = [friends[1]];
+                    return value;
+                });
+                expect(testCbWhere2).toEqual(friendPop);
+                // ==========================================
             });
         });
     });

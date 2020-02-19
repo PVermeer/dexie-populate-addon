@@ -70,16 +70,18 @@ export const databasesPositive = [
 
 export const databasesNegative = [];
 
-export type Methods = 'get';
-export const methods: {
-    desc: string;
-    hasCb: boolean;
-    method: Methods;
-}[] = [
+type TestDatabaseType = Dexie & { friends: Dexie.Table<Friend, number> };
+
+export const methods = [
+    {
+        desc: 'Table.populate().get()',
+        populated: true,
+        method: (db: TestDatabaseType) => (id: number) => db.friends.populate().get(id).then(x => x!)
+    },
     {
         desc: 'Table.get()',
-        hasCb: true,
-        method: 'get'
+        populated: false,
+        method: (db: TestDatabaseType) => (id: number) => db.friends.get(id).then(x => x!)
     }
 ];
 

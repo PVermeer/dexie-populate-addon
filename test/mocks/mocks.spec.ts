@@ -1,4 +1,4 @@
-import { mockFriends, mockClubs, Friend, Club } from '../../mocks/mocks';
+import { Club, Friend, mockClubs, mockFriends } from './mocks';
 
 describe('Mocks', () => {
     it('should be able to mock friends', () => {

@@ -14,8 +14,6 @@ export type Ref<O extends object, K extends IndexableType, _N = 'Ref'> = Nominal
 
 declare module 'dexie' {
 
-    type ThenShortcut<T, TResult> = (value: T) => TResult | PromiseLike<TResult>;
-
     namespace Dexie {
 
         interface Table<T, Key> {
@@ -33,8 +31,8 @@ export function populate(db: Dexie) {
 
     // Get the relational keys from the schema and return the function with a clean schema.
     let relationalSchema: RelationalDbSchema = {};
-    db.Version.prototype._parseStoresSpec = Dexie.override(
-        db.Version.prototype._parseStoresSpec,
+    (db.Version.prototype as any)._parseStoresSpec = Dexie.override(
+        (db.Version.prototype as any)._parseStoresSpec,
         (origFunc) =>
 
             function (this: any, storesSpec: StoreSchemas, outSchema: any) {

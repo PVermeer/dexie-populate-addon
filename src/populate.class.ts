@@ -1,6 +1,6 @@
 // tslint:disable: unified-signatures
 import 'dexie';
-import Dexie, { IndexableType } from 'dexie';
+import Dexie, { IndexableType, Table } from 'dexie';
 import { cloneDeep } from 'lodash';
 import { Ref } from './populate';
 import { RelationalDbSchema } from './schema-parser';
@@ -116,7 +116,7 @@ export class Populate<T> {
     constructor(
         private _records: (any)[],
         private _db: Dexie,
-        private _table: Dexie.Table<any, any>,
+        private _table: Table<any, any>,
         private _relationalSchema: RelationalDbSchema
     ) { }
 

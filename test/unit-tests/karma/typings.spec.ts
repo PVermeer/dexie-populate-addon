@@ -72,7 +72,9 @@ describe('Typings', () => {
                     test!.hasFriends[0] = 1;
                 });
 
+
                 // ===== Callbacks (thenSchortcuts) =====
+
                 const testCbGet = await db.friends.get(1, value => {
                     value!.hasFriends = [2];
                     return value;
@@ -96,7 +98,25 @@ describe('Typings', () => {
                     return value;
                 });
                 expect(testCbWhere2).toEqual(friendPop);
-                // ==========================================
+
+
+                // ===== Each (thenSchortcuts) =====
+
+                const testEach = await new Promise((res: (value: Friend) => void) =>
+                    db.friends.each(x => res(x)));
+                expect(testEach).toEqual(friend);
+
+                const testEach2 = await new Promise((res: (value: Populated<Friend>) => void) =>
+                    db.friends.populate().each(x => res(x)));
+                expect(testEach2).toEqual(friendPop);
+
+                const testEachWhere = await new Promise((res: (value: Friend) => void) =>
+                    db.friends.where(':id').equals(1).each(x => res(x)));
+                expect(testEachWhere).toEqual(friend);
+
+                const testEachWhere2 = await new Promise((res: (value: Populated<Friend>) => void) =>
+                    db.friends.populate().where(':id').equals(1).each(x => res(x)));
+                expect(testEachWhere2).toEqual(friendPop);
             });
         });
     });

@@ -14,17 +14,15 @@ export type Ref<O extends object, K extends IndexableType, _N = 'Ref'> = Nominal
 
 declare module 'dexie' {
 
-    namespace Dexie {
-
-        interface Table<T, Key> {
-            /**
-             * Use Table populate methods
-             *
-             * Uses Table.methods with populate options.
-             */
-            populate(): PopulateTable<T, Key>;
-        }
+    interface Table<T, TKey> {
+        /**
+         * Use Table populate methods
+         *
+         * Uses Table.methods with populate options.
+         */
+        populate(): PopulateTable<T, TKey>;
     }
+
 }
 
 export function populate(db: Dexie) {

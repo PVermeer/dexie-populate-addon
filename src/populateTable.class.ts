@@ -1,14 +1,14 @@
 // tslint:disable: unified-signatures
 // tslint:disable: space-before-function-paren
-import Dexie, { Collection, IndexableType, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
+import Dexie, { IndexableType, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
 import { Populate, Populated } from './populate.class';
-import { CollectionPopulatedClass } from './populateCollection.class';
+import { CollectionPopulated, getCollectionPopulated } from './populateCollection.class';
 import { RelationalDbSchema } from './schema-parser';
 
-export class PopulateTable<T, Key> {
+export class PopulateTable<T, TKey> {
 
-    get(key: Key): PromiseExtended<Populated<T> | undefined>;
-    get<R>(key: Key, thenShortcut: ThenShortcut<Populated<T> | undefined, R>): PromiseExtended<R>;
+    get(key: TKey): PromiseExtended<Populated<T> | undefined>;
+    get<R>(key: TKey, thenShortcut: ThenShortcut<Populated<T> | undefined, R>): PromiseExtended<R>;
     get(equalityCriterias: { [key: string]: IndexableType }): PromiseExtended<Populated<T> | undefined>;
     get<R>(
         equalityCriterias: { [key: string]: IndexableType },
@@ -16,7 +16,7 @@ export class PopulateTable<T, Key> {
     ): PromiseExtended<R>;
 
     public get<R>(
-        keyOrequalityCriterias: Key | { [key: string]: IndexableType },
+        keyOrequalityCriterias: TKey | { [key: string]: IndexableType },
         thenShortcut: ThenShortcut<Populated<T> | undefined, R> = (value: any) => value
     ): PromiseExtended<R | undefined> {
 
@@ -32,26 +32,45 @@ export class PopulateTable<T, Key> {
     }
 
 
-    where(index: string | string[]): WhereClause<Populated<T>, Key>;
-    where(equalityCriterias: { [key: string]: IndexableType }): Collection<Populated<T>, Key>;
+    where(index: string | string[]): WhereClause<Populated<T>, TKey>;
+    where(equalityCriterias: { [key: string]: IndexableType }): CollectionPopulated;
 
     public where(
         indexOrequalityCriterias: string | string[] | { [key: string]: IndexableType }
-    ): WhereClause<T, Key> | Collection<T, Key> {
+    ): WhereClause<T, TKey> | CollectionPopulated {
 
         // Get a new WhereClause
         const whereClause = this._table.where(indexOrequalityCriterias as any);
 
         // Create an extended Collection class that populate results
-        const CollectionPopulated = CollectionPopulatedClass(whereClause, this._db, this._table, this._relationalSchema);
+        const collectionPopulated = getCollectionPopulated(whereClause, this._db, this._table, this._relationalSchema);
 
         // Override the Collection getter to return the new class
         Object.defineProperty(whereClause, 'Collection', {
-            get(this) { return CollectionPopulated; }
+            get(this) { return collectionPopulated; }
         });
 
         return whereClause;
     }
+
+    /**
+     * @warning Potentially very slow.
+     */
+    public each(callback: (
+        obj: Populated<T>,
+        cursor: { key: IndexableType, primaryKey: TKey }) => any
+    ): PromiseExtended<void> {
+        const records: T[] = [];
+        const cursors: { key: IndexableType, primaryKey: TKey }[] = [];
+        return this._table.each((x, y) => records.push(x) && cursors.push(y))
+            .then(async () => {
+                const populatedClass = new Populate<T>(records, this._db, this._table, this._relationalSchema);
+                const recordsPop = await populatedClass.populated;
+                recordsPop.forEach((x, i) => callback(x, cursors[i]));
+                return;
+            });
+    }
+
 
     constructor(
         private _db: Dexie,

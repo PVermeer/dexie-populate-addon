@@ -2,6 +2,7 @@
 import Dexie from 'dexie';
 import faker from 'faker/locale/nl';
 import { populate, Ref } from '../../src/populate';
+import { Populated } from '../../src/populate.class';
 
 export class Club {
     id?: number;
@@ -92,8 +93,35 @@ export const methods = [
         desc: 'Table.where()',
         populated: false,
         method: (db: TestDatabaseType) => (id: number) => db.friends.where(':id').equals(id).first()
+    },
+    {
+        desc: 'Table.populate().each()',
+        populated: true,
+        method: (db: TestDatabaseType) => (_id: number) =>
+            new Promise((res: (value: Populated<Friend>) => void) =>
+                db.friends.populate().each(x => res(x)))
+    },
+    {
+        desc: 'Table.each()',
+        populated: false,
+        method: (db: TestDatabaseType) => (_id: number) =>
+            new Promise((res: (value: Friend) => void) =>
+                db.friends.each(x => res(x)))
+    },
+    {
+        desc: 'Table.populate().where().each()',
+        populated: true,
+        method: (db: TestDatabaseType) => (id: number) =>
+            new Promise((res: (value: Populated<Friend>) => void) =>
+                db.friends.populate().where(':id').equals(id).each(x => res(x)))
+    },
+    {
+        desc: 'Table.where().each()',
+        populated: false,
+        method: (db: TestDatabaseType) => (id: number) =>
+            new Promise((res: (value: Friend) => void) =>
+                db.friends.where(':id').equals(id).each(x => res(x)))
     }
-
 ];
 
 export const mockFriends = (count: number = 5): Friend[] => {

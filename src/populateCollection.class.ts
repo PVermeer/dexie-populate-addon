@@ -1,9 +1,12 @@
-import Dexie, { Collection, KeyRange, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
+// tslint:disable: space-before-function-paren
+import Dexie, { Collection, IndexableType, KeyRange, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
 import { Populate, Populated } from './populate.class';
 import { RelationalDbSchema } from './schema-parser';
 
+export type CollectionPopulated = ReturnType<typeof getCollectionPopulated>;
+
 interface WhereClauseExt extends WhereClause {
-    Collection: new (whereClause?: WhereClause | null, keyRangeGenerator?: () => KeyRange) => Collection;
+    Collection: new <T, TKey>(whereClause?: WhereClause | null, keyRangeGenerator?: () => KeyRange) => Collection<T, TKey>;
 }
 
 /**
@@ -12,16 +15,17 @@ interface WhereClauseExt extends WhereClause {
  * From here the Collection class can be extended to override some methods
  * when table.populate() is called.
  */
-export function CollectionPopulatedClass(
+export function getCollectionPopulated(
     whereClause: WhereClause | null,
     db: Dexie,
     table: Table,
     relationalSchema: RelationalDbSchema
 ) {
     const whereClauseExt = whereClause as WhereClauseExt;
+    const collection = whereClauseExt.Collection;
 
     /** New collection class where methods are overwritten to support population */
-    class CollectionPopulated extends whereClauseExt.Collection {
+    class CollectionPopulatedClass<T, TKey> extends collection<T, TKey> {
 
         public toArray<R>(
             thenShortcut: ThenShortcut<Populated<any>[], R> = (value: any) => value
@@ -30,10 +34,28 @@ export function CollectionPopulatedClass(
             // Not using async / await so PromiseExtended is returned
             return super.toArray()
                 .then(results => {
-                    const populatedClass = new Populate<any>(results, db, table, relationalSchema);
+                    const populatedClass = new Populate<T>(results, db, table, relationalSchema);
                     return populatedClass.populated;
                 })
                 .then(popResults => thenShortcut(popResults));
+        }
+
+        /**
+         * @warning Potentially very slow.
+         */
+        public each(callback: (
+            obj: T,
+            cursor: { key: IndexableType, primaryKey: TKey }) => any
+        ): PromiseExtended<void> {
+            const records: T[] = [];
+            const cursors: { key: IndexableType, primaryKey: TKey }[] = [];
+            return super.each((x, y) => records.push(x) && cursors.push(y))
+                .then(async () => {
+                    const populatedClass = new Populate<T>(records, db, table, relationalSchema);
+                    const recordsPop = await populatedClass.populated;
+                    recordsPop.forEach((x, i) => callback(x, cursors[i]));
+                    return;
+                });
         }
 
         constructor(
@@ -44,5 +66,5 @@ export function CollectionPopulatedClass(
         }
     }
 
-    return CollectionPopulated as typeof CollectionPopulated;
+    return CollectionPopulatedClass;
 }

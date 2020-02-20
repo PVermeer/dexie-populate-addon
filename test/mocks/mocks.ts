@@ -82,7 +82,18 @@ export const methods = [
         desc: 'Table.get()',
         populated: false,
         method: (db: TestDatabaseType) => (id: number) => db.friends.get(id).then(x => x!)
+    },
+    {
+        desc: 'Table.populate().where()',
+        populated: true,
+        method: (db: TestDatabaseType) => (id: number) => db.friends.populate().where(':id').equals(id).first()
+    },
+    {
+        desc: 'Table.where()',
+        populated: false,
+        method: (db: TestDatabaseType) => (id: number) => db.friends.where(':id').equals(id).first()
     }
+
 ];
 
 export const mockFriends = (count: number = 5): Friend[] => {

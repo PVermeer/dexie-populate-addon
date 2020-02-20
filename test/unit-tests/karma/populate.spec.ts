@@ -17,16 +17,6 @@ describe('Populate', () => {
             afterEach(async () => {
                 await db.delete();
             });
-            it('should work', async () => {
-                const friends = mockFriends(2);
-                const ids = await db.friends.bulkAdd(friends, { allKeys: true });
-                await db.friends.update(ids[0], { hasFriends: [ids[1]] });
-
-                const test = await db.friends.populate().where(':id').equals(1).first();
-
-                console.log(test);
-                expect(true).toBeTrue();
-            });
             describe('Methods', () => {
                 methods.forEach((_method, _j) => {
                     // if (_j !== 2) { return; }

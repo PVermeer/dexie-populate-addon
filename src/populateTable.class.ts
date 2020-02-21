@@ -33,17 +33,19 @@ export class PopulateTable<T, TKey> {
 
 
     where(index: string | string[]): WhereClause<Populated<T>, TKey>;
-    where(equalityCriterias: { [key: string]: IndexableType }): CollectionPopulated;
+    where(equalityCriterias: { [key: string]: IndexableType }): CollectionPopulated<Populated<T>, TKey>;
 
     public where(
         indexOrequalityCriterias: string | string[] | { [key: string]: IndexableType }
-    ): WhereClause<T, TKey> | CollectionPopulated {
+    ): WhereClause<T, TKey> | CollectionPopulated<Populated<T>, TKey> {
 
-        // Get a new WhereClause
         const whereClause = this._table.where(indexOrequalityCriterias as any);
-
-        // Create an extended Collection class that populate results
-        const collectionPopulated = getCollectionPopulated(whereClause, this._db, this._table, this._relationalSchema);
+        const collectionPopulated = getCollectionPopulated<T, TKey>(
+            whereClause,
+            this._db,
+            this._table,
+            this._relationalSchema
+        );
 
         // Override the Collection getter to return the new class
         Object.defineProperty(whereClause, 'Collection', {
@@ -70,7 +72,6 @@ export class PopulateTable<T, TKey> {
                 return;
             });
     }
-
 
     constructor(
         private _db: Dexie,

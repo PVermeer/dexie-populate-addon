@@ -3,11 +3,12 @@ import Dexie, { Collection, IndexableType, KeyRange, PromiseExtended, Table, The
 import { Populate, Populated } from './populate.class';
 import { RelationalDbSchema } from './schema-parser';
 
-export type CollectionPopulated = ReturnType<typeof getCollectionPopulated>;
-
+// Interfaces to extend Dexie declarations. A lot of properties are not exposed :(
 interface WhereClauseExt extends WhereClause {
     Collection: new <T, TKey>(whereClause?: WhereClause | null, keyRangeGenerator?: () => KeyRange) => Collection<T, TKey>;
 }
+
+export interface CollectionPopulated<T, TKey> extends Collection<T, TKey> { }
 
 /**
  * Dexie.js is actively hiding classes and only exports interfaces
@@ -15,12 +16,12 @@ interface WhereClauseExt extends WhereClause {
  * From here the Collection class can be extended to override some methods
  * when table.populate() is called.
  */
-export function getCollectionPopulated(
+export function getCollectionPopulated<M, MKey>(
     whereClause: WhereClause | null,
     db: Dexie,
     table: Table,
     relationalSchema: RelationalDbSchema
-) {
+): CollectionPopulated<M, MKey> {
     const whereClauseExt = whereClause as WhereClauseExt;
     const collection = whereClauseExt.Collection;
 
@@ -66,5 +67,6 @@ export function getCollectionPopulated(
         }
     }
 
-    return CollectionPopulatedClass;
+    // Generating declarations will error when class is dynamically contructed, so any.
+    return CollectionPopulatedClass as any;
 }

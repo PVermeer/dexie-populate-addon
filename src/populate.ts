@@ -10,9 +10,13 @@ import { RelationalDbSchema, SchemaParser, StoreSchemas } from './schema-parser'
  * Ref nominal type.
  * TS does not support nominal types. Fake implementation so the type system can match.
  */
-export type Ref<O extends object, K extends IndexableType, _N = 'Ref'> = Nominal<O, 'Ref'> | K;
+export type Ref<O extends object, K extends IndexableType, _N = 'Ref'> = Nominal<O, 'Ref'> | K | null;
+export interface PopulateOptions {
+    shallow: boolean;
+}
 
 declare module 'dexie' {
+
 
     interface Table<T, TKey> {
         /**
@@ -20,7 +24,9 @@ declare module 'dexie' {
          *
          * Uses Table.methods with populate options.
          */
-        populate(): PopulateTable<T, TKey>;
+        populate(keys: string[], options?: PopulateOptions): PopulateTable<T, TKey>;
+        populate(options?: PopulateOptions): PopulateTable<T, TKey>;
+        populate(keysOrOptions?: string[] | PopulateOptions): PopulateTable<T, TKey>;
     }
 
 }

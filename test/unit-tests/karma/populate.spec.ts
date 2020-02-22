@@ -2,51 +2,59 @@
 import Dexie from 'dexie';
 import { cloneDeep } from 'lodash-es';
 import { Populated } from '../../../src/populate.class';
-import { Club, databasesPositive, Friend, methods, mockClubs, mockFriends } from '../../mocks/mocks';
+import { Club, databasesPositive, Friend, methodsPositive, mockClubs, mockFriends, methodsNegative } from '../../mocks/mocks';
 
 describe('Populate', () => {
     databasesPositive.forEach((database, _i) => {
         // if (_i !== 4) { return; }
         describe(database.desc, () => {
             let db: ReturnType<typeof database.db>;
+
+            let friend: Friend;
+            let id: number;
+            let updateId: number;
+            let friendPop: Populated<Friend>;
+
+            let hasFriends: Friend[];
+            let hasFriendIds: number[];
+
+            let clubs: Club[];
+            let clubIds: number[];
+
             beforeEach(async () => {
                 db = database.db(Dexie);
                 await db.open();
                 expect(db.isOpen()).toBeTrue();
+
+                [friend, ...hasFriends] = mockFriends();
+                clubs = mockClubs();
+
+                id = await db.friends.add(friend);
+                updateId = database.desc !== 'TestDatabaseCustomKey' && id > 1000000 ? 1 : id;
+
+                hasFriendIds = await Promise.all(hasFriends.map(x => db.friends.add(x)));
+                await db.friends.update(updateId, { hasFriends: hasFriendIds });
+                friend.hasFriends = hasFriendIds;
+
+                friendPop = cloneDeep(friend) as Populated<Friend>;
+                friendPop.hasFriends = hasFriends;
+                friendPop.memberOf = clubs;
+
+                clubIds = await Promise.all(clubs.map(x => db.clubs.add(x)));
+                await db.friends.update(updateId, { memberOf: clubIds });
+                friend.memberOf = clubIds;
             });
             afterEach(async () => {
                 await db.delete();
             });
             describe('Methods', () => {
-                methods.forEach((_method, _j) => {
-                    // if (_j !== 2) { return; }
+                methodsPositive.forEach((_method, _j) => {
+                    // if (_j !== 7) { return; }
                     let method: ReturnType<typeof _method.method>;
-                    let friend: Friend;
-                    let id: number;
-                    let updateId: number;
-
-                    let hasFriends: Friend[];
-                    let hasFriendIds: number[];
-
-                    let clubs: Club[];
-                    let clubIds: number[];
 
                     describe(_method.desc, () => {
                         beforeEach(async () => {
                             method = _method.method(db);
-                            [friend, ...hasFriends] = mockFriends();
-                            clubs = mockClubs();
-
-                            id = await db.friends.add(friend);
-                            updateId = database.desc !== 'TestDatabaseCustomKey' && id > 1000000 ? 1 : id;
-
-                            hasFriendIds = await Promise.all(hasFriends.map(x => db.friends.add(x)));
-                            await db.friends.update(updateId, { hasFriends: hasFriendIds });
-                            friend.hasFriends = hasFriendIds;
-
-                            clubIds = await Promise.all(clubs.map(x => db.clubs.add(x)));
-                            await db.friends.update(updateId, { memberOf: clubIds });
-                            friend.memberOf = clubIds;
                         });
                         if (_method.populated) {
                             describe('Populated', () => {
@@ -55,16 +63,26 @@ describe('Populate', () => {
                                     const expected = new Friend(getFriend as any);
                                     expected.hasFriends = hasFriends as any;
                                     expect(getFriend).toEqual(expected as any);
-                                    expect(getFriend!.hasFriends.every((x: any) => x instanceof Friend)).toBeTrue();
+                                    expect(getFriend!.hasFriends!.every((x: any) => x instanceof Friend)).toBeTrue();
                                 });
-                                it('should be populated with clubs', async () => {
-                                    const getFriend = await method(id);
-                                    const expected = new Friend(getFriend as any);
-                                    expected.memberOf = clubs as any;
-                                    expect(getFriend).toEqual(expected as any);
-                                    console.log(getFriend!.memberOf.every((x: any) => x instanceof Club));
-                                    expect(getFriend!.memberOf.every((x: any) => x instanceof Club)).toBeTrue();
-                                });
+                                if (!_method.populatedPartial) {
+                                    it('should be populated with clubs', async () => {
+                                        const getFriend = await method(id);
+                                        const expected = new Friend(getFriend as any);
+                                        expected.memberOf = clubs as any;
+                                        expect(getFriend).toEqual(expected as any);
+                                        expect(getFriend!.hasFriends!.every((x: any) => x instanceof Friend)).toBeTrue();
+                                        expect(getFriend!.memberOf!.every((x: any) => x instanceof Club)).toBeTrue();
+                                    });
+                                } else {
+                                    it('should not be populated with clubs', async () => {
+                                        const getFriend = await method(id);
+                                        const expected = new Friend(getFriend as any);
+                                        expect(getFriend).toEqual(expected as any);
+                                        expect(getFriend!.hasFriends!.every((x: any) => x instanceof Friend)).toBeTrue();
+                                        expect(getFriend!.memberOf!.every((x: any) => typeof x === 'number')).toBeTrue();
+                                    });
+                                }
                             });
                         }
                         if (!_method.populated) {
@@ -74,44 +92,48 @@ describe('Populate', () => {
                                     const expected = new Friend(getFriend as any);
                                     expected.hasFriends = hasFriendIds;
                                     expect(getFriend).toEqual(expected as any);
-                                    expect(getFriend!.hasFriends.every((x: any) => !isNaN(x))).toBeTrue();
+                                    expect(getFriend!.hasFriends!.every((x: any) => !isNaN(x))).toBeTrue();
                                 });
                                 it('should not be populated with clubs', async () => {
                                     const getFriend = await method(id);
                                     const expected = new Friend(getFriend as any);
                                     expected.memberOf = clubIds;
                                     expect(getFriend).toEqual(expected as any);
-                                    expect(getFriend!.hasFriends.every((x: any) => !isNaN(x))).toBeTrue();
+                                    expect(getFriend!.hasFriends!.every((x: any) => !isNaN(x))).toBeTrue();
                                 });
                             });
                         }
                     });
                 });
             });
-            describe('ThenSchortcut', () => {
-                let friend: Friend;
-                let hasFriend: Friend;
-                let friendPop: Populated<Friend>;
-                let ids: number[];
-                beforeEach(async () => {
-                    let friends = mockFriends(2);
-                    ids = await db.friends.bulkAdd(friends, { allKeys: true });
-                    await db.friends.update(ids[0], { hasFriends: [ids[1]] });
-                    friends = friends.map((x, i) => { x.id = ids[i]; return x; });
-                    [friend, hasFriend] = friends;
-                    friendPop = cloneDeep(friend) as Populated<Friend>;
-                    friendPop.hasFriends = [hasFriend];
+            describe('Methods negative', () => {
+                methodsNegative.forEach((_method, _j) => {
+                    // if (_j !== 7) { return; }
+                    let method: ReturnType<typeof _method.method>;
+                    describe(_method.desc, () => {
+                        beforeEach(async () => {
+                            method = _method.method(db);
+                        });
+                        describe('Provided populate key does not match with schema', () => {
+                            it('should be rejected', async () => {
+                                await expectAsync(method(id))
+                                    .toBeRejectedWithError(`DEXIE POPULATE: Provided key 'sdfsdf' doesn't match with schema`);
+                            });
+                        });
+                    });
                 });
+            });
+            describe('ThenSchortcut', () => {
                 describe('Table.populate().get', () => {
                     it('should return the correct value', async () => {
-                        const testCb = await db.friends.populate().get(ids[0], value => value!);
+                        const testCb = await db.friends.populate().get(id, value => value!);
                         expect(testCb).toEqual(friendPop);
                     });
                     it('should return the changed value', async () => {
-                        const testCb = await db.friends.populate().get(ids[0], () => 'string');
+                        const testCb = await db.friends.populate().get(id, () => 'string');
                         expect(testCb).toBe('string');
 
-                        const testCb2 = await db.friends.populate().get(ids[0], value => {
+                        const testCb2 = await db.friends.populate().get(id, value => {
                             value!.firstName = 'testieTest';
                             return value;
                         });
@@ -120,14 +142,14 @@ describe('Populate', () => {
                 });
                 describe('Table.populate().where()', () => {
                     it('should return the correct value', async () => {
-                        const testCb = await db.friends.populate().where(':id').equals(ids[0]).first(value => value!);
+                        const testCb = await db.friends.populate().where(':id').equals(id).first(value => value!);
                         expect(testCb).toEqual(friendPop);
                     });
                     it('should return the changed value', async () => {
-                        const testCb = await db.friends.populate().where(':id').equals(ids[0]).first(() => 'string');
+                        const testCb = await db.friends.populate().where(':id').equals(id).first(() => 'string');
                         expect(testCb).toBe('string');
 
-                        const testCb2 = await db.friends.populate().where(':id').equals(ids[0]).first(value => {
+                        const testCb2 = await db.friends.populate().where(':id').equals(id).first(value => {
                             value!.firstName = 'testieTest';
                             return value;
                         });

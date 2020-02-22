@@ -1,16 +1,17 @@
 // tslint:disable: unified-signatures
 import 'dexie';
 import Dexie, { IndexableType, Table } from 'dexie';
-import { cloneDeep } from 'lodash';
-import { Ref } from './populate';
+import { cloneDeep, uniqBy } from 'lodash';
+import { Ref, PopulateOptions } from './populate';
 import { RelationalDbSchema } from './schema-parser';
 
 interface MappedIds {
     [targetTable: string]: {
         [targetKey: string]: {
             id: IndexableType;
-            index: number;
-            key: string
+            // index: number;
+            key: string;
+            ref: any;
         }[];
     };
 }
@@ -27,6 +28,8 @@ export type Populated<T> = {
 export class Populate<T> {
 
     private _populated: Populated<T>[];
+    private _keysToPopulate: string[] | undefined;
+    private _options: PopulateOptions | undefined;
 
     /**
      * Get populated documents.
@@ -45,27 +48,39 @@ export class Populate<T> {
      */
     public async populateRecords() {
 
-        const records = await this._records;
-
-        const populated = cloneDeep(records);
         const schema = this._relationalSchema[this._table.name];
+        const keysToPopulate = this._keysToPopulate || [];
+
+        // Match schema with provided keys
+        keysToPopulate.forEach(key => {
+            if (!schema[key]) {
+                throw new Error(`DEXIE POPULATE: Provided key '${key}' doesn't match with schema`);
+            }
+        });
+
+        const records = await this._records;
+        const populated = cloneDeep(records);
 
         // Collect all target id's per target table per target key to optimise db queries.
-        const mappedIds = records.reduce<MappedIds>((acc, record, index) => {
+        const mappedIds = populated.reduce<MappedIds>((acc, record) => {
 
             if (!record) { return acc; }
 
             // Gather all id's per target key
             Object.entries(record).forEach(([key, entry]) => {
 
-                if (!schema[key]) { return; }
+                if (
+                    !schema[key] ||
+                    keysToPopulate.some(x => x !== key)
+                ) { return; }
+
                 const { targetTable, targetKey } = schema[key];
 
                 if (!acc[targetTable]) { acc[targetTable] = {}; }
                 if (!acc[targetTable][targetKey]) { acc[targetTable][targetKey] = []; }
 
                 const ids = Array.isArray(entry) ? entry : [entry];
-                const mappedIdEntries = ids.map(id => ({ id, index, key }));
+                const mappedIdEntries = ids.map(id => ({ id, key, ref: record }));
 
                 acc[targetTable][targetKey] = [...acc[targetTable][targetKey], ...mappedIdEntries];
             });
@@ -78,28 +93,27 @@ export class Populate<T> {
 
             Object.entries(targetKeys).forEach(([targetKey, entries]) => {
 
-                const uniqueIds = [...new Set(entries.map(id => id.id))];
+                const uniqueIds = [...new Set(entries.map(entry => entry.id))];
+                const uniqueByRef = uniqBy(entries, value => value.ref);
 
                 // Get results
-                const promise = this._db.table(targetTable).
-                    where(targetKey)
-                    .anyOf(uniqueIds as any) // Should be fixed in Dexie v3
+                const promise = this._db.table(targetTable)
+                    .where(targetKey)
+                    .anyOf(uniqueIds) // Should be fixed in Dexie v3
                     .toArray()
 
-                    // Set the result on the populated record
+                    // Set the result on the populated record by reference
                     .then(results => {
-                        entries.forEach(entry => {
-                            const record = records[entry.index];
-                            const popRecord = populated[entry.index];
-                            if (!record || !popRecord) { return; }
-                            const recordKey = record[entry.key];
+                        uniqueByRef.forEach(entry => {
+                            const { ref, key } = entry;
+                            const refKey = ref[key];
 
-                            const newRecordKey = Array.isArray(recordKey) ?
-                                results.filter(result => recordKey.includes(result[targetKey])) :
-                                results.find(result => result[targetKey] === recordKey) || null;
+                            const newRefKey = Array.isArray(refKey) ?
+                                results.filter(result => refKey.includes(result[targetKey])) :
+                                results.find(result => result[targetKey] === refKey) || null;
 
-                            // Update the key with found records
-                            popRecord[entry.key] = newRecordKey;
+                            // Update the referenced object with found record(s)
+                            ref[key] = newRefKey;
                         });
                     });
 
@@ -115,9 +129,18 @@ export class Populate<T> {
 
     constructor(
         private _records: (any)[],
+        keysOrOptions: string[] | PopulateOptions | undefined,
         private _db: Dexie,
         private _table: Table<any, any>,
         private _relationalSchema: RelationalDbSchema
-    ) { }
+    ) {
+        if (keysOrOptions) {
+            if (Array.isArray(keysOrOptions)) {
+                this._keysToPopulate = keysOrOptions;
+            } else if ('shallow' in keysOrOptions) {
+                this._options = keysOrOptions;
+            }
+        }
+    }
 
 }

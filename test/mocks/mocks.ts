@@ -1,5 +1,5 @@
 // tslint:disable: no-non-null-assertion
-import Dexie from 'dexie';
+import Dexie, { PromiseExtended } from 'dexie';
 import faker from 'faker/locale/nl';
 import { populate, Ref } from '../../src/populate';
 import { Populated } from '../../src/populate.class';
@@ -7,6 +7,8 @@ import { Populated } from '../../src/populate.class';
 export class Club {
     id?: number;
     name: string;
+    size: number;
+    theme: Ref<Theme, number>;
     description: string;
 
     doSomething() {
@@ -20,7 +22,23 @@ export class Club {
     }
 
 }
+export class Theme {
+    id?: number;
+    name: string;
+    style: string;
+    description: string;
 
+    doSomething() {
+        return 'done';
+    }
+
+    constructor(club: OmitMethods<Theme>) {
+        Object.entries(club).forEach(([key, value]) => {
+            this[key] = value;
+        });
+    }
+
+}
 export class Friend {
     id?: number;
     testProp?: string;
@@ -59,7 +77,8 @@ export const databasesPositive = [
                 this.on('blocked', () => false);
                 this.version(1).stores({
                     friends: '++id, customId, firstName, lastName, shoeSize, age, hasFriends => friends.id, memberOf => clubs.id',
-                    clubs: '++id, name'
+                    clubs: '++id, name, theme => theme.id',
+                    theme: '++id, name'
                 });
 
                 this.friends.mapToClass(Friend);
@@ -73,11 +92,17 @@ export const databasesNegative = [];
 
 type TestDatabaseType = Dexie & { friends: Dexie.Table<Friend, number> };
 
-export const methods = [
+export const methodsPositive = [
     {
         desc: 'Table.populate().get()',
         populated: true,
         method: (db: TestDatabaseType) => (id: number) => db.friends.populate().get(id).then(x => x!)
+    },
+    {
+        desc: `Table.populate(['hasFriends']).get()`,
+        populated: true,
+        populatedPartial: true,
+        method: (db: TestDatabaseType) => (id: number) => db.friends.populate(['hasFriends']).get(id).then(x => x!)
     },
     {
         desc: 'Table.get()',
@@ -90,6 +115,12 @@ export const methods = [
         method: (db: TestDatabaseType) => (id: number) => db.friends.populate().where(':id').equals(id).first()
     },
     {
+        desc: `Table.populate(['hasFriends']).where()`,
+        populated: true,
+        populatedPartial: true,
+        method: (db: TestDatabaseType) => (id: number) => db.friends.populate(['hasFriends']).where(':id').equals(id).first()
+    },
+    {
         desc: 'Table.where()',
         populated: false,
         method: (db: TestDatabaseType) => (id: number) => db.friends.where(':id').equals(id).first()
@@ -100,6 +131,14 @@ export const methods = [
         method: (db: TestDatabaseType) => (_id: number) =>
             new Promise((res: (value: Populated<Friend>) => void) =>
                 db.friends.populate().each(x => res(x)))
+    },
+    {
+        desc: `Table.populate(['hasFriends']).each()`,
+        populated: true,
+        populatedPartial: true,
+        method: (db: TestDatabaseType) => (_id: number) =>
+            new Promise((res: (value: Populated<Friend>) => void) =>
+                db.friends.populate(['hasFriends']).each(x => res(x)))
     },
     {
         desc: 'Table.each()',
@@ -116,11 +155,46 @@ export const methods = [
                 db.friends.populate().where(':id').equals(id).each(x => res(x)))
     },
     {
+        desc: `Table.populate(['hasFriends']).where().each()`,
+        populated: true,
+        populatedPartial: true,
+        method: (db: TestDatabaseType) => (id: number) =>
+            new Promise((res: (value: Populated<Friend>) => void) =>
+                db.friends.populate(['hasFriends']).where(':id').equals(id).each(x => res(x)))
+    },
+    {
         desc: 'Table.where().each()',
         populated: false,
         method: (db: TestDatabaseType) => (id: number) =>
             new Promise((res: (value: Friend) => void) =>
                 db.friends.where(':id').equals(id).each(x => res(x)))
+    }
+];
+
+export const methodsNegative = [
+    {
+        desc: 'Table.populate().get()',
+        populated: true,
+        method: (db: TestDatabaseType) => (id: number) => db.friends.populate(['sdfsdf']).get(id).then(x => x!)
+    },
+    {
+        desc: 'Table.populate().where()',
+        populated: true,
+        method: (db: TestDatabaseType) => (id: number) => db.friends.populate(['sdfsdf']).where(':id').equals(id).first()
+    },
+    {
+        desc: 'Table.populate().each()',
+        populated: true,
+        method: (db: TestDatabaseType) => (_id: number) =>
+            db.friends.populate(['sdfsdf'])
+                .each(x => x) as unknown as PromiseExtended<Populated<Friend>>
+    },
+    {
+        desc: 'Table.populate().where().each()',
+        populated: true,
+        method: (db: TestDatabaseType) => (id: number) =>
+            db.friends.populate(['sdfsdf']).where(':id').equals(id)
+                .each(x => x) as unknown as PromiseExtended<Populated<Friend>>
     }
 ];
 
@@ -140,7 +214,18 @@ export const mockFriends = (count: number = 5): Friend[] => {
 export const mockClubs = (count: number = 5): Club[] => {
     const club = () => new Club({
         name: faker.lorem.words(2),
+        size: faker.random.number(),
+        theme: null,
         description: faker.lorem.sentences(4)
     });
     return new Array(count).fill(null).map(() => club());
+};
+
+export const mockThemes = (count: number = 5): Theme[] => {
+    const theme = () => new Theme({
+        name: faker.lorem.words(2),
+        style: faker.random.word(),
+        description: faker.lorem.sentences(4)
+    });
+    return new Array(count).fill(null).map(() => theme());
 };

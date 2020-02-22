@@ -69,7 +69,7 @@ describe('Typings', () => {
                 ]);
                 notPopulated.forEach(async test => {
                     expect(test).toEqual(friend);
-                    test!.hasFriends[0] = 1;
+                    test!.hasFriends![0] = 1;
                 });
 
 

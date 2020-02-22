@@ -1,5 +1,6 @@
 // tslint:disable: space-before-function-paren
 import Dexie, { Collection, IndexableType, KeyRange, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
+import { PopulateOptions } from './populate';
 import { Populate, Populated } from './populate.class';
 import { RelationalDbSchema } from './schema-parser';
 
@@ -18,6 +19,7 @@ export interface CollectionPopulated<T, TKey> extends Collection<T, TKey> { }
  */
 export function getCollectionPopulated<M, MKey>(
     whereClause: WhereClause | null,
+    keysOrOptions: string[] | PopulateOptions,
     db: Dexie,
     table: Table,
     relationalSchema: RelationalDbSchema
@@ -35,7 +37,7 @@ export function getCollectionPopulated<M, MKey>(
             // Not using async / await so PromiseExtended is returned
             return super.toArray()
                 .then(results => {
-                    const populatedClass = new Populate<T>(results, db, table, relationalSchema);
+                    const populatedClass = new Populate<T>(results, keysOrOptions, db, table, relationalSchema);
                     return populatedClass.populated;
                 })
                 .then(popResults => thenShortcut(popResults));
@@ -44,15 +46,14 @@ export function getCollectionPopulated<M, MKey>(
         /**
          * @warning Potentially very slow.
          */
-        public each(callback: (
-            obj: T,
-            cursor: { key: IndexableType, primaryKey: TKey }) => any
+        public each(
+            callback: (obj: T, cursor: { key: IndexableType, primaryKey: TKey }) => any
         ): PromiseExtended<void> {
             const records: T[] = [];
             const cursors: { key: IndexableType, primaryKey: TKey }[] = [];
             return super.each((x, y) => records.push(x) && cursors.push(y))
                 .then(async () => {
-                    const populatedClass = new Populate<T>(records, db, table, relationalSchema);
+                    const populatedClass = new Populate<T>(records, keysOrOptions, db, table, relationalSchema);
                     const recordsPop = await populatedClass.populated;
                     recordsPop.forEach((x, i) => callback(x, cursors[i]));
                     return;

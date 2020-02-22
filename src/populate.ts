@@ -11,12 +11,11 @@ import { RelationalDbSchema, SchemaParser, StoreSchemas } from './schema-parser'
  * TS does not support nominal types. Fake implementation so the type system can match.
  */
 export type Ref<O extends object, K extends IndexableType, _N = 'Ref'> = Nominal<O, 'Ref'> | K | null;
-export interface PopulateOptions {
-    shallow: boolean;
+export interface PopulateOptions<B = false> {
+    shallow: B;
 }
 
 declare module 'dexie' {
-
 
     interface Table<T, TKey> {
         /**
@@ -24,9 +23,18 @@ declare module 'dexie' {
          *
          * Uses Table.methods with populate options.
          */
-        populate(keys: string[], options?: PopulateOptions): PopulateTable<T, TKey>;
-        populate(options?: PopulateOptions): PopulateTable<T, TKey>;
-        populate(keysOrOptions?: string[] | PopulateOptions): PopulateTable<T, TKey>;
+        populate<B extends boolean = false>(
+            keys: string[],
+            options?: PopulateOptions<B>
+        ): PopulateTable<T, TKey, B>;
+
+        populate<B extends boolean = false>(
+            options?: PopulateOptions<B>
+        ): PopulateTable<T, TKey, B>;
+
+        populate<B extends boolean = false>(
+            keysOrOptions?: string[] | PopulateOptions<B>
+        ): PopulateTable<T, TKey, B>;
     }
 
 }
@@ -54,6 +62,11 @@ export function populate(db: Dexie) {
 
         if (!relationalSchema || !Object.keys(relationalSchema).length) {
             console.warn('DEXIE POPULATE: No relational keys are set');
+        }
+
+        if (Object.values(relationalSchema).some(table => Object.values(table).some(x => !db[x.targetTable]))) {
+            db.close();
+            throw new Error('DEXIE POPULATE: Relation schema does not match the db tables');
         }
 
         addPopulate(db, relationalSchema);

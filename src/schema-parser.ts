@@ -13,13 +13,11 @@ export interface RelationalDbSchema {
 
 export class SchemaParser {
 
-    private schema: StoreSchemas;
-
     /**
      * Extract the relationial keys from the schema.
      */
     public getRelationalKeys(): RelationalDbSchema {
-        return Object.entries(this.schema).reduce<RelationalDbSchema>((acc, [table, value]) => {
+        return Object.entries(this._schema).reduce<RelationalDbSchema>((acc, [table, value]) => {
             if (!value) { return acc; }
 
             const relationalKeys = value
@@ -41,7 +39,7 @@ export class SchemaParser {
      * Create a clean schema without the added keys.
      */
     public getCleanedSchema(): StoreSchemas {
-        return Object.entries(this.schema).reduce<StoreSchemas>((acc, [table, value]) => {
+        return Object.entries(this._schema).reduce<StoreSchemas>((acc, [table, value]) => {
             if (!value) { return acc; }
 
             const sanitized = value
@@ -53,8 +51,8 @@ export class SchemaParser {
         }, {});
     }
 
-    constructor(schema: StoreSchemas) {
-        this.schema = schema;
-    }
+    constructor(
+        private _schema: StoreSchemas
+    ) { }
 
 }

@@ -24,7 +24,7 @@
     ],
     "stripInternal": true,
     "lib": [
-      "es2018",
+      "ESNext",
       "dom"
     ],
     "strict": true,

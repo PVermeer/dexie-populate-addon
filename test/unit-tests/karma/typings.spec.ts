@@ -26,7 +26,7 @@ describe('Typings', () => {
                 const [clubTest] = mockClubs(1);
                 const friendIds = await Promise.all(friends.map(x => db.friends.add(x)));
                 const clubIds = await Promise.all(clubs.map(x => db.clubs.add(x)));
-                const friendPop = cloneDeep(friends[0]) as Populated<Friend>;
+                const friendPop = cloneDeep(friends[0]) as Populated<Friend, true>;
 
                 await db.friends.update(friendIds[0], {
                     hasFriends: [friendIds[1]],
@@ -37,13 +37,12 @@ describe('Typings', () => {
                 friendPop.hasFriends = [friends[1]];
                 friendPop.memberOf = [clubs[1]];
 
-                const populated = await Promise.all([
-                    db.friends.populate().get(1).then(x => x!),
-                    db.friends.populate().where(':id').equals(1).first().then(x => x!)
+                const populatedShallow = await Promise.all([
+                    db.friends.populate({ shallow: true }).get(1).then(x => x!),
+                    db.friends.populate({ shallow: true }).where(':id').equals(1).first().then(x => x!)
                 ]);
-                populated.forEach(async test => {
+                populatedShallow.forEach(async test => {
 
-                    expect(test).toEqual(friendPop);
                     test.doSomething();
                     test.age = 4;
                     test.firstName = 'sdfsdf';
@@ -62,13 +61,30 @@ describe('Typings', () => {
                     test.memberOf[0] = clubTest;
                     test.memberOf[0].description = 'sdfsdfsdf';
                 });
+                const populatedDeep = await Promise.all([
+                    db.friends.populate().get(1).then(x => x!),
+                    db.friends.populate().where(':id').equals(1).first().then(x => x!)
+                ]);
+                populatedDeep.forEach(async test => {
+
+                    test.doSomething();
+                    test.age = 4;
+                    test.firstName = 'sdfsdf';
+
+                    test.hasFriends[0].id = 56;
+                    test.hasFriends[0].age = 8;
+                    test.hasFriends[0].hasFriends[0].age = 1;
+
+                    test.memberOf[0].id = 47;
+                    test.memberOf[0].description = 'sdfsdfsdf';
+                    test.memberOf[0].theme.name = 'sdfsdfsdf';
+                });
 
                 const notPopulated = await Promise.all([
                     db.friends.get(1).then(x => x!),
                     db.friends.where(':id').equals(1).first().then(x => x!)
                 ]);
                 notPopulated.forEach(async test => {
-                    expect(test).toEqual(friend);
                     test!.hasFriends![0] = 1;
                 });
 
@@ -81,7 +97,7 @@ describe('Typings', () => {
                 });
                 expect(testCbGet).toEqual(friend);
 
-                const testCb2Get = await db.friends.populate().get(1, value => {
+                const testCb2Get = await db.friends.populate({ shallow: true }).get(1, value => {
                     value!.hasFriends = [friends[1]];
                     return value;
                 });
@@ -93,7 +109,7 @@ describe('Typings', () => {
                 });
                 expect(testCbWhere).toEqual(friend);
 
-                const testCbWhere2 = await db.friends.populate().where(':id').equals(1).first(value => {
+                const testCbWhere2 = await db.friends.populate({ shallow: true }).where(':id').equals(1).first(value => {
                     value!.hasFriends = [friends[1]];
                     return value;
                 });
@@ -106,16 +122,16 @@ describe('Typings', () => {
                     db.friends.each(x => res(x)));
                 expect(testEach).toEqual(friend);
 
-                const testEach2 = await new Promise((res: (value: Populated<Friend>) => void) =>
-                    db.friends.populate().each(x => res(x)));
+                const testEach2 = await new Promise((res: (value: Populated<Friend, true>) => void) =>
+                    db.friends.populate({ shallow: true }).each(x => res(x)));
                 expect(testEach2).toEqual(friendPop);
 
                 const testEachWhere = await new Promise((res: (value: Friend) => void) =>
                     db.friends.where(':id').equals(1).each(x => res(x)));
                 expect(testEachWhere).toEqual(friend);
 
-                const testEachWhere2 = await new Promise((res: (value: Populated<Friend>) => void) =>
-                    db.friends.populate().where(':id').equals(1).each(x => res(x)));
+                const testEachWhere2 = await new Promise((res: (value: Populated<Friend, true>) => void) =>
+                    db.friends.populate({ shallow: true }).where(':id').equals(1).each(x => res(x)));
                 expect(testEachWhere2).toEqual(friendPop);
             });
         });

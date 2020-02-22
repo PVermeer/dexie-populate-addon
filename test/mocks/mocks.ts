@@ -4,6 +4,23 @@ import faker from 'faker/locale/nl';
 import { populate, Ref } from '../../src/populate';
 import { Populated } from '../../src/populate.class';
 
+export class Theme {
+    id?: number;
+    name: string;
+    style: string;
+    description: string;
+
+    doSomething() {
+        return 'done';
+    }
+
+    constructor(theme: OmitMethods<Theme>) {
+        Object.entries(theme).forEach(([key, value]) => {
+            this[key] = value;
+        });
+    }
+
+}
 export class Club {
     id?: number;
     name: string;
@@ -16,23 +33,6 @@ export class Club {
     }
 
     constructor(club: OmitMethods<Club>) {
-        Object.entries(club).forEach(([key, value]) => {
-            this[key] = value;
-        });
-    }
-
-}
-export class Theme {
-    id?: number;
-    name: string;
-    style: string;
-    description: string;
-
-    doSomething() {
-        return 'done';
-    }
-
-    constructor(club: OmitMethods<Theme>) {
         Object.entries(club).forEach(([key, value]) => {
             this[key] = value;
         });
@@ -70,6 +70,7 @@ export const databasesPositive = [
 
             public friends: Dexie.Table<Friend, number>;
             public clubs: Dexie.Table<Club, number>;
+            public themes: Dexie.Table<Theme, number>;
 
             constructor(name: string) {
                 super(name);
@@ -77,12 +78,13 @@ export const databasesPositive = [
                 this.on('blocked', () => false);
                 this.version(1).stores({
                     friends: '++id, customId, firstName, lastName, shoeSize, age, hasFriends => friends.id, memberOf => clubs.id',
-                    clubs: '++id, name, theme => theme.id',
-                    theme: '++id, name'
+                    clubs: '++id, name, theme => themes.id',
+                    themes: '++id, name'
                 });
 
                 this.friends.mapToClass(Friend);
                 this.clubs.mapToClass(Club);
+                this.themes.mapToClass(Theme);
             }
         }('TestDatabase')
     }
@@ -129,7 +131,7 @@ export const methodsPositive = [
         desc: 'Table.populate().each()',
         populated: true,
         method: (db: TestDatabaseType) => (_id: number) =>
-            new Promise((res: (value: Populated<Friend>) => void) =>
+            new Promise((res: (value: Populated<Friend, false>) => void) =>
                 db.friends.populate().each(x => res(x)))
     },
     {
@@ -137,7 +139,7 @@ export const methodsPositive = [
         populated: true,
         populatedPartial: true,
         method: (db: TestDatabaseType) => (_id: number) =>
-            new Promise((res: (value: Populated<Friend>) => void) =>
+            new Promise((res: (value: Populated<Friend, false>) => void) =>
                 db.friends.populate(['hasFriends']).each(x => res(x)))
     },
     {
@@ -151,7 +153,7 @@ export const methodsPositive = [
         desc: 'Table.populate().where().each()',
         populated: true,
         method: (db: TestDatabaseType) => (id: number) =>
-            new Promise((res: (value: Populated<Friend>) => void) =>
+            new Promise((res: (value: Populated<Friend, false>) => void) =>
                 db.friends.populate().where(':id').equals(id).each(x => res(x)))
     },
     {
@@ -159,7 +161,7 @@ export const methodsPositive = [
         populated: true,
         populatedPartial: true,
         method: (db: TestDatabaseType) => (id: number) =>
-            new Promise((res: (value: Populated<Friend>) => void) =>
+            new Promise((res: (value: Populated<Friend, false>) => void) =>
                 db.friends.populate(['hasFriends']).where(':id').equals(id).each(x => res(x)))
     },
     {
@@ -187,14 +189,14 @@ export const methodsNegative = [
         populated: true,
         method: (db: TestDatabaseType) => (_id: number) =>
             db.friends.populate(['sdfsdf'])
-                .each(x => x) as unknown as PromiseExtended<Populated<Friend>>
+                .each(x => x) as unknown as PromiseExtended<Populated<Friend, false>>
     },
     {
         desc: 'Table.populate().where().each()',
         populated: true,
         method: (db: TestDatabaseType) => (id: number) =>
             db.friends.populate(['sdfsdf']).where(':id').equals(id)
-                .each(x => x) as unknown as PromiseExtended<Populated<Friend>>
+                .each(x => x) as unknown as PromiseExtended<Populated<Friend, false>>
     }
 ];
 

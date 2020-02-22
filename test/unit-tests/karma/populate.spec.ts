@@ -2,7 +2,7 @@
 import Dexie from 'dexie';
 import { cloneDeep } from 'lodash-es';
 import { Populated } from '../../../src/populate.class';
-import { Club, databasesPositive, Friend, methodsPositive, mockClubs, mockFriends, methodsNegative } from '../../mocks/mocks';
+import { Club, databasesPositive, Friend, methodsNegative, methodsPositive, mockClubs, mockFriends, mockThemes, Theme } from '../../mocks/mocks';
 
 describe('Populate', () => {
     databasesPositive.forEach((database, _i) => {
@@ -13,13 +13,16 @@ describe('Populate', () => {
             let friend: Friend;
             let id: number;
             let updateId: number;
-            let friendPop: Populated<Friend>;
+            let friendPop: Populated<Friend, false>;
 
             let hasFriends: Friend[];
             let hasFriendIds: number[];
 
             let clubs: Club[];
             let clubIds: number[];
+
+            let themes: Theme[];
+            let themeIds: number[];
 
             beforeEach(async () => {
                 db = database.db(Dexie);
@@ -28,28 +31,35 @@ describe('Populate', () => {
 
                 [friend, ...hasFriends] = mockFriends();
                 clubs = mockClubs();
+                themes = mockThemes();
 
                 id = await db.friends.add(friend);
                 updateId = database.desc !== 'TestDatabaseCustomKey' && id > 1000000 ? 1 : id;
 
                 hasFriendIds = await Promise.all(hasFriends.map(x => db.friends.add(x)));
-                await db.friends.update(updateId, { hasFriends: hasFriendIds });
-                friend.hasFriends = hasFriendIds;
-
-                friendPop = cloneDeep(friend) as Populated<Friend>;
-                friendPop.hasFriends = hasFriends;
-                friendPop.memberOf = clubs;
-
                 clubIds = await Promise.all(clubs.map(x => db.clubs.add(x)));
-                await db.friends.update(updateId, { memberOf: clubIds });
+                themeIds = await Promise.all(themes.map(x => db.themes.add(x)));
+
+                await db.clubs.update(clubIds[0], { theme: themeIds[0] });
+                await db.friends.update(updateId, {
+                    hasFriends: hasFriendIds,
+                    memberOf: clubIds
+                });
+
+                friend.hasFriends = hasFriendIds;
                 friend.memberOf = clubIds;
+
+                friendPop = cloneDeep(friend) as Populated<Friend, false>;
+                friendPop.hasFriends = hasFriends as Populated<Friend, false>[];
+                friendPop.memberOf = clubs as Populated<Club, false>[];
+                friendPop.memberOf[0].theme = themes[0];
             });
             afterEach(async () => {
                 await db.delete();
             });
             describe('Methods', () => {
                 methodsPositive.forEach((_method, _j) => {
-                    // if (_j !== 7) { return; }
+                    // if (_j !== 0) { return; }
                     let method: ReturnType<typeof _method.method>;
 
                     describe(_method.desc, () => {

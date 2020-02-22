@@ -1,8 +1,7 @@
 // tslint:disable: unified-signatures
-import 'dexie';
 import Dexie, { IndexableType, Table } from 'dexie';
 import { cloneDeep, uniqBy } from 'lodash';
-import { Ref, PopulateOptions } from './populate';
+import { PopulateOptions, Ref } from './populate';
 import { RelationalDbSchema } from './schema-parser';
 
 interface MappedIds {
@@ -19,17 +18,20 @@ interface MappedIds {
 /**
  * Overwrite the return type to the type as given in the Ref type after refs are populated.
  */
-export type Populated<T> = {
+export type Populated<T, B> = {
     [P in keyof T]: T[P] extends Ref<infer X, infer _Y, infer N> ?
     N extends 'Ref' ?
-    X : T[P] : T[P]
+    X extends object ? B extends true ? X : { [A in keyof X]: Populated<X[A], B> }
+    : T[P]
+    : T[P]
+    : T[P]
 };
 
-export class Populate<T> {
+export class Populate<T, B> {
 
-    private _populated: Populated<T>[];
+    private _populated: Populated<T, B>[];
     private _keysToPopulate: string[] | undefined;
-    private _options: PopulateOptions | undefined;
+    private _options: PopulateOptions<B> | undefined;
 
     /**
      * Get populated documents.
@@ -48,8 +50,25 @@ export class Populate<T> {
      */
     public async populateRecords() {
 
-        const schema = this._relationalSchema[this._table.name];
+        const records = await this._records;
+        const populated = cloneDeep(records);
+
+        await this._recursivePopulate(this._table.name, populated);
+
+        this._populated = populated as Populated<T, B>[];
+        return this._populated;
+    }
+
+    /**
+     * Recursively populate the provided records.
+     */
+    private _recursivePopulate = async (tableName: string, populateRefs: any[]) => {
+
+        const schema = this._relationalSchema[tableName];
+        if (!schema) { return; }
+
         const keysToPopulate = this._keysToPopulate || [];
+        const deepRefsToPopulate: { [table: string]: any[] } = {};
 
         // Match schema with provided keys
         keysToPopulate.forEach(key => {
@@ -58,11 +77,8 @@ export class Populate<T> {
             }
         });
 
-        const records = await this._records;
-        const populated = cloneDeep(records);
-
         // Collect all target id's per target table per target key to optimise db queries.
-        const mappedIds = populated.reduce<MappedIds>((acc, record) => {
+        const mappedIds = populateRefs.reduce<MappedIds>((acc, record) => {
 
             if (!record) { return acc; }
 
@@ -71,7 +87,8 @@ export class Populate<T> {
 
                 if (
                     !schema[key] ||
-                    keysToPopulate.some(x => x !== key)
+                    keysToPopulate.some(x => x !== key) ||
+                    !entry
                 ) { return; }
 
                 const { targetTable, targetKey } = schema[key];
@@ -114,6 +131,10 @@ export class Populate<T> {
 
                             // Update the referenced object with found record(s)
                             ref[key] = newRefKey;
+
+                            // Push the ref for furter populating
+                            if (!deepRefsToPopulate[targetTable]) { deepRefsToPopulate[targetTable] = []; }
+                            deepRefsToPopulate[targetTable].push(newRefKey);
                         });
                     });
 
@@ -123,13 +144,21 @@ export class Populate<T> {
             return acc;
         }, []));
 
-        this._populated = populated as Populated<T>[];
-        return this._populated;
+        // Return when shallow option is provided.
+        if (this._options && this._options.shallow) { return; }
+
+        // Recursively populate refs further per table
+        if (Object.keys(deepRefsToPopulate).length) {
+            await Promise.all(
+                Object.entries(deepRefsToPopulate)
+                    .map(([table, refs]) => this._recursivePopulate(table, refs.flat()))
+            );
+        }
     }
 
     constructor(
         private _records: (any)[],
-        keysOrOptions: string[] | PopulateOptions | undefined,
+        keysOrOptions: string[] | PopulateOptions<B> | undefined,
         private _db: Dexie,
         private _table: Table<any, any>,
         private _relationalSchema: RelationalDbSchema

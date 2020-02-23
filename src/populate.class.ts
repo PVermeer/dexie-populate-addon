@@ -1,8 +1,38 @@
 // tslint:disable: unified-signatures
 import Dexie, { IndexableType, Table } from 'dexie';
 import { cloneDeep, uniqBy } from 'lodash';
-import { PopulateOptions, Ref } from './populate';
+import { isEqual } from 'lodash-es';
+import { Nominal } from 'simplytyped';
+import { PopulateOptions } from './populate';
 import { RelationalDbSchema } from './schema-parser';
+
+/**
+ * Ref nominal type.
+ * TS does not support nominal types. Fake implementation so the type system can match.
+ */
+export type Ref<O extends object, K extends IndexableType, _N = 'Ref'> = Nominal<O, 'Ref'> | K | null;
+
+/**
+ * Overwrite the return type to the type as given in the Ref type after refs are populated.
+ */
+export type Populated<T, B> = {
+
+    // Check for nominal Ref on properties:
+    [P in keyof T]: T[P] extends Ref<infer X, infer _Y, infer N> ?
+    N extends 'Ref' ?
+
+    // Overwrite the propetires where ref is found:
+
+    // Check if shallow is true:
+    B extends false ?
+    // If shallow (B) === true:
+    X extends any[] ? { [K in keyof X]: Populated<X[K] | null, B> | null } : Populated<X | null, B>
+    // If shallow (B) === false:
+    : X extends any[] ? { [K in keyof X]: X[K] | null } : X | null
+
+    // Else use normal type
+    : T[P] : T[P]
+};
 
 interface MappedIds {
     [targetTable: string]: {
@@ -14,18 +44,6 @@ interface MappedIds {
         }[];
     };
 }
-
-/**
- * Overwrite the return type to the type as given in the Ref type after refs are populated.
- */
-export type Populated<T, B> = {
-    [P in keyof T]: T[P] extends Ref<infer X, infer _Y, infer N> ?
-    N extends 'Ref' ?
-    X extends object ? B extends true ? X : { [A in keyof X]: Populated<X[A], B> }
-    : T[P]
-    : T[P]
-    : T[P]
-};
 
 export class Populate<T, B> {
 
@@ -126,8 +144,19 @@ export class Populate<T, B> {
                             const refKey = ref[key];
 
                             const newRefKey = Array.isArray(refKey) ?
-                                results.filter(result => refKey.includes(result[targetKey])) :
+                                refKey.map(value => results.find(x => x[targetKey] === value) || null) :
                                 results.find(result => result[targetKey] === refKey) || null;
+
+                            // Error checking
+                            const isCircular = Array.isArray(newRefKey) && newRefKey.some(x => x ?
+                                isEqual(x[key], ref[key]) : false) ||
+                                isEqual(newRefKey[key], ref[key]);
+
+                            if (isCircular) {
+                                throw new Error(`DEXIE POPULATE: Circular reference detected on '${key}'. ` +
+                                    `'${key}' Probably contains a reference to itself.`
+                                );
+                            }
 
                             // Update the referenced object with found record(s)
                             ref[key] = newRefKey;

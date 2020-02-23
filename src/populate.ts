@@ -1,16 +1,10 @@
 // tslint:disable: space-before-function-paren // Conflict with default formatter vscode
 // tslint:disable: unified-signatures
-import Dexie, { IndexableType } from 'dexie';
-import { Nominal } from 'simplytyped';
+import Dexie from 'dexie';
 import { addPopulate } from './add-properties';
 import { PopulateTable } from './populateTable.class';
 import { RelationalDbSchema, SchemaParser, StoreSchemas } from './schema-parser';
 
-/**
- * Ref nominal type.
- * TS does not support nominal types. Fake implementation so the type system can match.
- */
-export type Ref<O extends object, K extends IndexableType, _N = 'Ref'> = Nominal<O, 'Ref'> | K | null;
 export interface PopulateOptions<B = false> {
     shallow: B;
 }
@@ -23,18 +17,9 @@ declare module 'dexie' {
          *
          * Uses Table.methods with populate options.
          */
-        populate<B extends boolean = false>(
-            keys: string[],
-            options?: PopulateOptions<B>
-        ): PopulateTable<T, TKey, B>;
-
-        populate<B extends boolean = false>(
-            options?: PopulateOptions<B>
-        ): PopulateTable<T, TKey, B>;
-
-        populate<B extends boolean = false>(
-            keysOrOptions?: string[] | PopulateOptions<B>
-        ): PopulateTable<T, TKey, B>;
+        populate<B extends boolean = false>(keys: string[], options?: PopulateOptions<B>): PopulateTable<T, TKey, B>;
+        populate<B extends boolean = false>(options?: PopulateOptions<B>): PopulateTable<T, TKey, B>;
+        populate<B extends boolean = false>(keysOrOptions?: string[] | PopulateOptions<B>): PopulateTable<T, TKey, B>;
     }
 
 }

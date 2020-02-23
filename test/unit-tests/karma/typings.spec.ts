@@ -2,7 +2,7 @@
 import Dexie from 'dexie';
 import { cloneDeep } from 'lodash-es';
 import { Populated } from '../../../src/populate.class';
-import { databasesPositive, Friend, mockClubs, mockFriends } from '../../mocks/mocks';
+import { databasesPositive, Friend, mockClubs, mockFriends, mockGroups } from '../../mocks/mocks';
 
 describe('Typings', () => {
     databasesPositive.forEach((database, _i) => {
@@ -19,65 +19,118 @@ describe('Typings', () => {
             });
             it('should not have type errors', async () => {
                 // Just some type matching, should not error in IDE / compilation or test
-                const friends = mockFriends(2);
+                const [friend] = mockFriends(1);
+                const friendId = await db.friends.add(friend);
+                const friends = mockFriends();
                 const [friendTest] = mockFriends(1);
-                const [friend] = friends;
-                const clubs = mockClubs(2);
+                const clubs = mockClubs();
                 const [clubTest] = mockClubs(1);
+                const groups = mockGroups();
+                const [groupTest] = mockGroups(1);
                 const friendIds = await Promise.all(friends.map(x => db.friends.add(x)));
                 const clubIds = await Promise.all(clubs.map(x => db.clubs.add(x)));
-                const friendPop = cloneDeep(friends[0]) as Populated<Friend, true>;
+                const groupIds = await Promise.all(groups.map(x => db.groups.add(x)));
+                const friendPop = cloneDeep(friend) as Populated<Friend, true>;
 
-                await db.friends.update(friendIds[0], {
-                    hasFriends: [friendIds[1]],
-                    memberOf: [clubIds[1]]
+                await db.friends.update(friendId, {
+                    hasFriends: friendIds,
+                    memberOf: clubIds,
+                    group: groupIds[1]
                 });
-                friend.hasFriends = [friendIds[1]];
-                friend.memberOf = [clubIds[1]];
-                friendPop.hasFriends = [friends[1]];
-                friendPop.memberOf = [clubs[1]];
+                await db.friends.update(friendIds[1], {
+                    hasFriends: [friendIds[2]]
+                });
+                friend.hasFriends = friendIds;
+                friend.memberOf = clubIds;
+                friend.group = groupIds[1];
+
+                friendPop.hasFriends = friends;
+                friendPop.memberOf = clubs;
+                friendPop.group = groups[1];
 
                 const populatedShallow = await Promise.all([
-                    db.friends.populate({ shallow: true }).get(1).then(x => x!),
-                    db.friends.populate({ shallow: true }).where(':id').equals(1).first().then(x => x!)
+                    db.friends.populate({ shallow: true }).get(1).then(x => x),
+                    db.friends.populate({ shallow: true }).where(':id').equals(1).first().then(x => x)
                 ]);
                 populatedShallow.forEach(async test => {
 
+                    if (test === undefined) { return; }
+
                     test.doSomething();
                     test.age = 4;
                     test.firstName = 'sdfsdf';
 
-                    const hasFriends = test!.hasFriends!;
-                    hasFriends[0].id = 56;
+                    const hasFriends = test.hasFriends;
+                    let hasFriend = hasFriends[0];
+                    if (hasFriend === null) { return; }
+                    hasFriend.doSomething();
                     test.hasFriends.push(friendTest!);
                     test.hasFriends = [friendTest];
-                    test.hasFriends[0] = friendTest;
-                    test.hasFriends[0].age = 8;
+                    hasFriend.age = 56;
+                    hasFriend = friendTest;
+                    hasFriend = null;
 
-                    const memberOf = test!.memberOf!;
-                    memberOf[0].id = 47;
+                    const memberOf = test.memberOf;
+                    let club = memberOf[0];
+                    if (club === null) { return; }
+                    club.doSomething();
                     test.memberOf.push(clubTest!);
                     test.memberOf = [clubTest];
-                    test.memberOf[0] = clubTest;
-                    test.memberOf[0].description = 'sdfsdfsdf';
+                    club = clubTest;
+                    club.description = 'sdfsdfsdf';
+                    club.theme = 13;
+                    club = null;
+
+                    let group = test.group;
+                    if (group === null) { return; }
+                    group.doSomething();
+                    group.description = 'sdfsdfsdf';
+                    group = groupTest;
+                    group = null;
+
+                    test = undefined;
                 });
+
                 const populatedDeep = await Promise.all([
-                    db.friends.populate().get(1).then(x => x!),
-                    db.friends.populate().where(':id').equals(1).first().then(x => x!)
+                    db.friends.populate().get(1).then(x => x),
+                    db.friends.populate().where(':id').equals(1).first().then(x => x)
                 ]);
                 populatedDeep.forEach(async test => {
 
+                    if (test === undefined) { return; }
+
                     test.doSomething();
                     test.age = 4;
                     test.firstName = 'sdfsdf';
 
-                    test.hasFriends[0].id = 56;
-                    test.hasFriends[0].age = 8;
-                    test.hasFriends[0].hasFriends[0].age = 1;
+                    const hasFriends = test.hasFriends;
+                    let hasFriend = hasFriends[0];
+                    if (hasFriend === null) { return; }
+                    hasFriend.doSomething();
+                    hasFriend.age = 56;
+                    hasFriend = null;
 
-                    test.memberOf[0].id = 47;
-                    test.memberOf[0].description = 'sdfsdfsdf';
-                    test.memberOf[0].theme.name = 'sdfsdfsdf';
+                    const hasFriendsNested = test.hasFriends[1]!.hasFriends;
+                    let hasFriendNested = hasFriendsNested[0];
+                    if (hasFriendNested === null) { return; }
+                    hasFriendNested.doSomething();
+                    hasFriendNested.age = 56;
+                    hasFriendNested = null;
+
+                    const memberOf = test.memberOf;
+                    let isMemberOf = memberOf[0];
+                    if (isMemberOf === null) { return; }
+                    isMemberOf.doSomething();
+                    isMemberOf.name = 'fsdfdf';
+                    isMemberOf = null;
+
+                    let theme = memberOf[1]!.theme;
+                    if (theme === null) { return; }
+                    theme.doSomething();
+                    theme.name = 'fsdfdf';
+                    theme = null;
+
+                    test = undefined;
                 });
 
                 const notPopulated = await Promise.all([
@@ -91,48 +144,42 @@ describe('Typings', () => {
 
                 // ===== Callbacks (thenSchortcuts) =====
 
-                const testCbGet = await db.friends.get(1, value => {
+                await db.friends.get(1, value => {
                     value!.hasFriends = [2];
                     return value;
                 });
-                expect(testCbGet).toEqual(friend);
 
-                const testCb2Get = await db.friends.populate({ shallow: true }).get(1, value => {
+                await db.friends.populate({ shallow: true }).get(1, value => {
                     value!.hasFriends = [friends[1]];
                     return value;
                 });
-                expect(testCb2Get).toEqual(friendPop);
 
-                const testCbWhere = await db.friends.where(':id').equals(1).first(value => {
+                await db.friends.where(':id').equals(1).first(value => {
                     value!.hasFriends = [2];
                     return value;
                 });
-                expect(testCbWhere).toEqual(friend);
 
-                const testCbWhere2 = await db.friends.populate({ shallow: true }).where(':id').equals(1).first(value => {
+                await db.friends.populate({ shallow: true }).where(':id').equals(1).first(value => {
                     value!.hasFriends = [friends[1]];
                     return value;
                 });
-                expect(testCbWhere2).toEqual(friendPop);
 
 
                 // ===== Each (thenSchortcuts) =====
 
-                const testEach = await new Promise((res: (value: Friend) => void) =>
+                await new Promise((res: (value: Friend) => void) =>
                     db.friends.each(x => res(x)));
-                expect(testEach).toEqual(friend);
 
-                const testEach2 = await new Promise((res: (value: Populated<Friend, true>) => void) =>
+                await new Promise((res: (value: Populated<Friend, true>) => void) =>
                     db.friends.populate({ shallow: true }).each(x => res(x)));
-                expect(testEach2).toEqual(friendPop);
 
-                const testEachWhere = await new Promise((res: (value: Friend) => void) =>
+                await new Promise((res: (value: Friend) => void) =>
                     db.friends.where(':id').equals(1).each(x => res(x)));
-                expect(testEachWhere).toEqual(friend);
 
-                const testEachWhere2 = await new Promise((res: (value: Populated<Friend, true>) => void) =>
+                await new Promise((res: (value: Populated<Friend, true>) => void) =>
                     db.friends.populate({ shallow: true }).where(':id').equals(1).each(x => res(x)));
-                expect(testEachWhere2).toEqual(friendPop);
+
+                expect(true).toBeTrue();
             });
         });
     });

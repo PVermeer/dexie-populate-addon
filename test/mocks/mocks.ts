@@ -2,7 +2,7 @@
 import Dexie, { PromiseExtended } from 'dexie';
 import faker from 'faker/locale/nl';
 import { populate } from '../../src/populate';
-import { Ref, Populated } from '../../src/types';
+import { Populated, Ref } from '../../src/types';
 
 export class Style {
     id?: number;

@@ -1,14 +1,14 @@
 // tslint:disable: space-before-function-paren // Conflict with default formatter vscode
-// tslint:disable: unified-signatures
 import Dexie from 'dexie';
-import { addPopulate } from './add-properties';
-import { RelationalDbSchema, SchemaParser, StoreSchemas } from './schema-parser';
-
+import { SchemaParser, StoreSchemas } from './schema-parser';
+import { getTableExtended } from './tableExt.class';
+import { DexieExt } from './types';
 
 export function populate(db: Dexie) {
 
+    const dbExt = db as DexieExt;
+
     // Get the relational keys from the schema and return the function with a clean schema.
-    let relationalSchema: RelationalDbSchema = {};
     (db.Version.prototype as any)._parseStoresSpec = Dexie.override(
         (db.Version.prototype as any)._parseStoresSpec,
         (origFunc) =>
@@ -18,24 +18,27 @@ export function populate(db: Dexie) {
                 const relationalKeys = parser.getRelationalKeys();
                 const cleanedSchema = parser.getCleanedSchema();
 
-                relationalSchema = relationalKeys;
+                dbExt._relationalSchema = relationalKeys;
 
                 // Return the original function with cleaned schema.
                 return origFunc.apply(this, [cleanedSchema, outSchema]);
             });
 
+    // Extend the Table class.
+    Object.defineProperty(db, 'Table', {
+        value: getTableExtended(dbExt)
+    });
+
     db.on('ready', () => {
 
-        if (!relationalSchema || !Object.keys(relationalSchema).length) {
+        if (!dbExt._relationalSchema || !Object.keys(dbExt._relationalSchema).length) {
             console.warn('DEXIE POPULATE: No relational keys are set');
         }
 
-        if (Object.values(relationalSchema).some(table => Object.values(table).some(x => !db[x.targetTable]))) {
+        if (Object.values(dbExt._relationalSchema).some(table => Object.values(table).some(x => !db[x.targetTable]))) {
             db.close();
-            throw new Error('DEXIE POPULATE: Relation schema does not match the db tables');
+            throw new Error('DEXIE POPULATE: Relation schema does not match the db tables, now closing database');
         }
-
-        addPopulate(db, relationalSchema);
 
     });
 

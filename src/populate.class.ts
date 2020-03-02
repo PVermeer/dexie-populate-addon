@@ -1,8 +1,8 @@
 // tslint:disable: unified-signatures
-import Dexie, { IndexableType, Table } from 'dexie';
+import { IndexableType, Table } from 'dexie';
 import { cloneDeep, isEqual, uniqBy } from 'lodash';
 import { RelationalDbSchema } from './schema-parser';
-import { Populated, PopulateOptions } from './types';
+import { DexieExt, Populated, PopulateOptions } from './types';
 
 interface MappedIds {
     [targetTable: string]: {
@@ -157,7 +157,7 @@ export class Populate<T, B extends boolean> {
     constructor(
         private _records: (any)[],
         keysOrOptions: string[] | PopulateOptions<B> | undefined,
-        private _db: Dexie,
+        private _db: DexieExt,
         private _table: Table<any, any>,
         private _relationalSchema: RelationalDbSchema
     ) {

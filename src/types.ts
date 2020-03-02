@@ -1,6 +1,12 @@
-import { UnionizeTuple, Nominal } from 'simplytyped';
-import { IndexableType } from 'dexie';
-import { PopulateTable } from './populateTable.class';
+import { Dexie, IndexableType, Table, TableSchema, Transaction } from 'dexie';
+import { Nominal, UnionizeTuple } from 'simplytyped';
+import { RelationalDbSchema } from './schema-parser';
+import { TableExtended } from './tableExt.class';
+
+export interface DexieExt extends Dexie {
+    _relationalSchema: RelationalDbSchema;
+    Table: new <T, TKey>(name: string, tableSchema: TableSchema, optionalTrans?: Transaction) => Table<T, TKey>;
+}
 
 export interface PopulateOptions<B extends boolean = false> {
     shallow: B;
@@ -36,25 +42,15 @@ export type Populated<T, B extends boolean, O extends string[] = string[]> = {
 
 declare module 'dexie' {
 
-    interface Table<T, TKey> {
-        /**
-         * Use Table populate methods
-         *
-         * Uses Table.methods with populate options.
-         */
-        // populate<B extends boolean = false>(keys: string[], options?: PopulateOptions<B>): PopulateTable<T, TKey, B>;
-        // populate<B extends boolean = false>(options?: PopulateOptions<B>): PopulateTable<T, TKey, B>;
-
-        populate<B extends boolean = false>(
-            keysOrOptions?: string[] | PopulateOptions<B>
-        ): PopulateTable<T, TKey, B>;
-    }
+    /**
+     * Extended Table class with populate methods
+     */
+    interface Table<T, TKey> extends TableExtended<T, TKey> { }
 
 }
 
 type NominalRef<T, R extends string = 'Ref'> = Nominal<T, R>;
 type NominalT<T> = T extends any[] ? { [P in keyof T]: NominalRef<T[P]> | null } : NominalRef<T> | null;
-
 
 type RecursivePopulate<B extends boolean, X, O extends string[]> =
     // Check if shallow is true:
@@ -63,4 +59,3 @@ type RecursivePopulate<B extends boolean, X, O extends string[]> =
     X extends any[] ? { [K in keyof X]: X[K] | null } : X | null
     :
     X extends any[] ? { [K in keyof X]: Populated<X[K] | null, B, O> | null } : Populated<X | null, B, O>;
-

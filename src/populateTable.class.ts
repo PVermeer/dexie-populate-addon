@@ -1,10 +1,10 @@
 // tslint:disable: unified-signatures
 // tslint:disable: space-before-function-paren
-import Dexie, { IndexableType, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
+import { IndexableType, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
 import { Populate } from './populate.class';
 import { CollectionPopulated, getCollectionPopulated } from './populateCollection.class';
 import { RelationalDbSchema } from './schema-parser';
-import { Populated, PopulateOptions } from './types';
+import { DexieExt, Populated, PopulateOptions } from './types';
 
 export class PopulateTable<T, TKey, B extends boolean> {
 
@@ -40,7 +40,7 @@ export class PopulateTable<T, TKey, B extends boolean> {
     ): WhereClause<T, TKey> | CollectionPopulated<Populated<T, B>, TKey> {
 
         const whereClause = this._table.where(indexOrequalityCriterias as any);
-        const collectionPopulated = getCollectionPopulated<T, TKey, B>(
+        const CollectionPopulatedClass = getCollectionPopulated<T, TKey, B>(
             whereClause,
             this._keysOrOptions,
             this._db,
@@ -50,7 +50,7 @@ export class PopulateTable<T, TKey, B extends boolean> {
 
         // Override the Collection getter to return the new class
         Object.defineProperty(whereClause, 'Collection', {
-            get(this) { return collectionPopulated; }
+            get(this) { return CollectionPopulatedClass; }
         });
 
         return whereClause;
@@ -74,8 +74,8 @@ export class PopulateTable<T, TKey, B extends boolean> {
     }
 
     constructor(
-        private _keysOrOptions: string[] | PopulateOptions<B>,
-        private _db: Dexie,
+        private _keysOrOptions: string[] | PopulateOptions<B> | undefined,
+        private _db: DexieExt,
         private _table: Table<any, any>,
         private _relationalSchema: RelationalDbSchema
     ) { }

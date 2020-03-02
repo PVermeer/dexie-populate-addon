@@ -1,51 +1,20 @@
 // tslint:disable: unified-signatures
 import Dexie, { IndexableType, Table } from 'dexie';
-import { cloneDeep, uniqBy } from 'lodash';
-import { isEqual } from 'lodash-es';
-import { Nominal } from 'simplytyped';
-import { PopulateOptions } from './populate';
+import { cloneDeep, isEqual, uniqBy } from 'lodash';
 import { RelationalDbSchema } from './schema-parser';
-
-/**
- * Ref nominal type.
- * TS does not support nominal types. Fake implementation so the type system can match.
- */
-export type Ref<O extends object, K extends IndexableType, _N = 'Ref'> = Nominal<O, 'Ref'> | K | null;
-
-/**
- * Overwrite the return type to the type as given in the Ref type after refs are populated.
- */
-export type Populated<T, B> = {
-
-    // Check for nominal Ref on properties:
-    [P in keyof T]: T[P] extends Ref<infer X, infer _Y, infer N> ?
-    N extends 'Ref' ?
-
-    // Overwrite the propetires where ref is found:
-
-    // Check if shallow is true:
-    B extends false ?
-    // If shallow (B) === true:
-    X extends any[] ? { [K in keyof X]: Populated<X[K] | null, B> | null } : Populated<X | null, B>
-    // If shallow (B) === false:
-    : X extends any[] ? { [K in keyof X]: X[K] | null } : X | null
-
-    // Else use normal type
-    : T[P] : T[P]
-};
+import { Populated, PopulateOptions } from './types';
 
 interface MappedIds {
     [targetTable: string]: {
         [targetKey: string]: {
             id: IndexableType;
-            // index: number;
             key: string;
             ref: any;
         }[];
     };
 }
 
-export class Populate<T, B> {
+export class Populate<T, B extends boolean> {
 
     private _populated: Populated<T, B>[];
     private _keysToPopulate: string[] | undefined;

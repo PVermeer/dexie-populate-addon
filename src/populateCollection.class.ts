@@ -1,8 +1,8 @@
 // tslint:disable: space-before-function-paren
 import Dexie, { Collection, IndexableType, KeyRange, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
-import { PopulateOptions } from './populate';
-import { Populate, Populated } from './populate.class';
+import { Populate } from './populate.class';
 import { RelationalDbSchema } from './schema-parser';
+import { PopulateOptions, Populated } from './types';
 
 // Interfaces to extend Dexie declarations. A lot of properties are not exposed :(
 interface WhereClauseExt extends WhereClause {
@@ -17,7 +17,7 @@ export interface CollectionPopulated<T, TKey> extends Collection<T, TKey> { }
  * From here the Collection class can be extended to override some methods
  * when table.populate() is called.
  */
-export function getCollectionPopulated<M, MKey, B>(
+export function getCollectionPopulated<M, MKey, B extends boolean>(
     whereClause: WhereClause | null,
     keysOrOptions: string[] | PopulateOptions<B>,
     db: Dexie,

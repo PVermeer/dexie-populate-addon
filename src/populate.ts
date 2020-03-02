@@ -2,27 +2,8 @@
 // tslint:disable: unified-signatures
 import Dexie from 'dexie';
 import { addPopulate } from './add-properties';
-import { PopulateTable } from './populateTable.class';
 import { RelationalDbSchema, SchemaParser, StoreSchemas } from './schema-parser';
 
-export interface PopulateOptions<B = false> {
-    shallow: B;
-}
-
-declare module 'dexie' {
-
-    interface Table<T, TKey> {
-        /**
-         * Use Table populate methods
-         *
-         * Uses Table.methods with populate options.
-         */
-        populate<B extends boolean = false>(keys: string[], options?: PopulateOptions<B>): PopulateTable<T, TKey, B>;
-        populate<B extends boolean = false>(options?: PopulateOptions<B>): PopulateTable<T, TKey, B>;
-        populate<B extends boolean = false>(keysOrOptions?: string[] | PopulateOptions<B>): PopulateTable<T, TKey, B>;
-    }
-
-}
 
 export function populate(db: Dexie) {
 

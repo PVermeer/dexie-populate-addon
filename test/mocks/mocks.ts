@@ -2,12 +2,29 @@
 import Dexie, { PromiseExtended } from 'dexie';
 import faker from 'faker/locale/nl';
 import { populate } from '../../src/populate';
-import { Populated, Ref } from '../../src/populate.class';
+import { Ref, Populated } from '../../src/types';
 
+export class Style {
+    id?: number;
+    name: string;
+    description: string;
+    AAAAAAAAAA: string;
+
+    doSomething() {
+        return 'done';
+    }
+
+    constructor(style: OmitMethods<Style>) {
+        Object.entries(style).forEach(([key, value]) => {
+            this[key] = value;
+        });
+    }
+
+}
 export class Theme {
     id?: number;
     name: string;
-    style: string;
+    style: Ref<Style, number>;
     description: string;
 
     doSomething() {
@@ -65,7 +82,7 @@ export class Friend {
     lastName: string;
     shoeSize: number;
     customId: number;
-    some?: { id: number; };
+    some?: { id: number; other: string };
     hasFriends: Ref<Friend[], number[]>;
     memberOf: Ref<Club[], number[]>;
     group: Ref<Group, number>;
@@ -254,7 +271,7 @@ export const mockClubs = (count: number = 5): Club[] => {
 export const mockThemes = (count: number = 5): Theme[] => {
     const theme = () => new Theme({
         name: faker.lorem.words(2),
-        style: faker.random.word(),
+        style: null,
         description: faker.lorem.sentences(4)
     });
     return new Array(count).fill(null).map(() => theme());

@@ -1,7 +1,7 @@
 // tslint:disable: no-non-null-assertion
 import Dexie from 'dexie';
 import { cloneDeep } from 'lodash-es';
-import { Populated } from '../../../src/populate.class';
+import { Populated } from '../../../src/types';
 import { Club, databasesPositive, Friend, Group, methodsNegative, methodsPositive, mockClubs, mockFriends, mockGroups, mockThemes, Theme } from '../../mocks/mocks';
 
 describe('Populate', () => {
@@ -61,7 +61,7 @@ describe('Populate', () => {
                 friendPop = cloneDeep(friend) as Populated<Friend, false>;
                 friendPop.hasFriends = hasFriends as Populated<Friend, false>[];
                 friendPop.memberOf = clubs as Populated<Club, false>[];
-                friendPop.memberOf[0]!.theme = themes[0];
+                friendPop.memberOf[0]!.theme = themes[0] as Populated<Theme, false>;
             });
             afterEach(async () => {
                 await db.delete();

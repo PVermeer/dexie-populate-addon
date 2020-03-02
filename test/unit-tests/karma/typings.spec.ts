@@ -1,7 +1,7 @@
 // tslint:disable: no-non-null-assertion
 import Dexie from 'dexie';
 import { cloneDeep } from 'lodash-es';
-import { Populated } from '../../../src/populate.class';
+import { Populated } from '../../../src/types';
 import { databasesPositive, Friend, mockClubs, mockFriends, mockGroups } from '../../mocks/mocks';
 
 describe('Typings', () => {
@@ -78,7 +78,6 @@ describe('Typings', () => {
                     test.memberOf = [clubTest];
                     club = clubTest;
                     club.description = 'sdfsdfsdf';
-                    club.theme = 13;
                     club = null;
 
                     let group = test.group;
@@ -133,6 +132,34 @@ describe('Typings', () => {
                     test = undefined;
                 });
 
+                // ========= Partial populate ========
+
+                const populatedPartial = await Promise.all([
+                    db.friends.populate(['hasFriends', 'group', 'theme']).get(1).then(x => x),
+                ]);
+                populatedPartial.forEach(async test => {
+
+                    if (test === undefined) { return; }
+
+                    const hasFriends = test!.hasFriends;
+                    let hasFriend = hasFriends[0];
+                    if (hasFriend === null) { return; }
+                    hasFriend.doSomething();
+                    hasFriend.age = 56;
+                    hasFriend = null;
+
+                    const memberOf = test!.memberOf;
+                    let isMemberOf = memberOf![0];
+                    if (isMemberOf === null) { return; }
+                    isMemberOf.doSomething();
+                    isMemberOf.name = 'fsdfdf';
+                    isMemberOf.theme!.name = 'vsvsdv';
+                    isMemberOf = null;
+
+                });
+
+                // ======= Not Populated =======
+
                 const notPopulated = await Promise.all([
                     db.friends.get(1).then(x => x!),
                     db.friends.where(':id').equals(1).first().then(x => x!)
@@ -140,7 +167,6 @@ describe('Typings', () => {
                 notPopulated.forEach(async test => {
                     test!.hasFriends![0] = 1;
                 });
-
 
                 // ===== Callbacks (thenSchortcuts) =====
 

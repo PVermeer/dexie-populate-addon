@@ -10,7 +10,6 @@ describe('Dexie', () => {
         let DexieReq: typeof DexieImport;
         beforeAll(() => {
             DexieReq = require('dexie');
-            require('rxjs');
         });
         it('should load Dexie.js', () => {
             expect(DexieReq).toBeTruthy();

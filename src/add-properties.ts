@@ -2,7 +2,7 @@
 import Dexie, { Table } from 'dexie';
 import { PopulateTable } from './populateTable.class';
 import { RelationalDbSchema } from './schema-parser';
-import { PopulateOptions } from './populate';
+import { PopulateOptions } from './types';
 
 export function addPopulate(db: Dexie, relationalSchema: RelationalDbSchema) {
 

@@ -1,12 +1,12 @@
 // tslint:disable: unified-signatures
 // tslint:disable: space-before-function-paren
 import Dexie, { IndexableType, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
-import { PopulateOptions } from './populate';
-import { Populate, Populated } from './populate.class';
+import { Populate } from './populate.class';
 import { CollectionPopulated, getCollectionPopulated } from './populateCollection.class';
 import { RelationalDbSchema } from './schema-parser';
+import { Populated, PopulateOptions } from './types';
 
-export class PopulateTable<T, TKey, B> {
+export class PopulateTable<T, TKey, B extends boolean> {
 
     get(key: TKey): PromiseExtended<Populated<T, B> | undefined>;
     get<R>(key: TKey, thenShortcut: ThenShortcut<Populated<T, B> | undefined, R>): PromiseExtended<R>;

@@ -37,6 +37,13 @@ export class Populate<T, B extends boolean> {
      */
     public async populateRecords() {
 
+        // Match schema with provided keys
+        (this._keysToPopulate || []).forEach(key => {
+            if (!Object.values(this._relationalSchema).some(x => Object.keys(x).some(y => y === key))) {
+                throw new Error(`DEXIE POPULATE: Provided key '${key}' doesn't match with schema`);
+            }
+        });
+
         const records = await this._records;
         const populated = cloneDeep(records);
 
@@ -57,13 +64,6 @@ export class Populate<T, B extends boolean> {
         const keysToPopulate = this._keysToPopulate || [];
         const deepRefsToPopulate: { [table: string]: any[] } = {};
 
-        // Match schema with provided keys
-        keysToPopulate.forEach(key => {
-            if (!schema[key]) {
-                throw new Error(`DEXIE POPULATE: Provided key '${key}' doesn't match with schema`);
-            }
-        });
-
         // Collect all target id's per target table per target key to optimise db queries.
         const mappedIds = populateRefs.reduce<MappedIds>((acc, record) => {
 
@@ -74,7 +74,7 @@ export class Populate<T, B extends boolean> {
 
                 if (
                     !schema[key] ||
-                    keysToPopulate.some(x => x !== key) ||
+                    keysToPopulate.length && !keysToPopulate.some(x => x === key) ||
                     !entry
                 ) { return; }
 

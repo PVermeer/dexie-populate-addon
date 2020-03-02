@@ -2,7 +2,7 @@
 import Dexie from 'dexie';
 import { cloneDeep } from 'lodash-es';
 import { Populated } from '../../../src/types';
-import { databasesPositive, Friend, mockClubs, mockFriends, mockGroups } from '../../mocks/mocks';
+import { databasesPositive, Friend, mockClubs, mockFriends, mockGroups, mockStyles, mockThemes } from '../../mocks/mocks';
 
 describe('Typings', () => {
     databasesPositive.forEach((database, _i) => {
@@ -27,9 +27,13 @@ describe('Typings', () => {
                 const [clubTest] = mockClubs(1);
                 const groups = mockGroups();
                 const [groupTest] = mockGroups(1);
+                const themes = mockThemes();
+                const styles = mockStyles();
                 const friendIds = await Promise.all(friends.map(x => db.friends.add(x)));
                 const clubIds = await Promise.all(clubs.map(x => db.clubs.add(x)));
                 const groupIds = await Promise.all(groups.map(x => db.groups.add(x)));
+                const themeIds = await Promise.all(themes.map(x => db.themes.add(x)));
+                const styleIds = await Promise.all(styles.map(x => db.styles.add(x)));
                 const friendPop = cloneDeep(friend) as Populated<Friend, true>;
 
                 await db.friends.update(friendId, {
@@ -39,6 +43,12 @@ describe('Typings', () => {
                 });
                 await db.friends.update(friendIds[1], {
                     hasFriends: [friendIds[2]]
+                });
+                await db.clubs.update(clubIds[1], {
+                    theme: themeIds[1]
+                });
+                await db.themes.update(themeIds[1], {
+                    style: styleIds[1]
                 });
                 friend.hasFriends = friendIds;
                 friend.memberOf = clubIds;
@@ -135,7 +145,7 @@ describe('Typings', () => {
                 // ========= Partial populate ========
 
                 const populatedPartial = await Promise.all([
-                    db.friends.populate(['hasFriends', 'group', 'theme']).get(1).then(x => x),
+                    db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).get(1).then(x => x),
                 ]);
                 populatedPartial.forEach(async test => {
 
@@ -149,11 +159,12 @@ describe('Typings', () => {
                     hasFriend = null;
 
                     const memberOf = test!.memberOf;
-                    let isMemberOf = memberOf![0];
+                    let isMemberOf = memberOf![1];
                     if (isMemberOf === null) { return; }
                     isMemberOf.doSomething();
                     isMemberOf.name = 'fsdfdf';
                     isMemberOf.theme!.name = 'vsvsdv';
+                    isMemberOf.theme!.style!.color = 'asdasd';
                     isMemberOf = null;
 
                 });

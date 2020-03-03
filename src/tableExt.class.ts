@@ -9,9 +9,9 @@ export interface TableExtended<T, TKey> {
      *
      * Uses Table.methods with populate options.
      */
-    populate<B extends boolean = false>(keys: string[], options?: PopulateOptions<B>): PopulateTable<T, TKey, B>;
-    populate<B extends boolean = false>(options?: PopulateOptions<B>): PopulateTable<T, TKey, B>;
-    populate<B extends boolean = false>(keysOrOptions?: string[] | PopulateOptions<B>): PopulateTable<T, TKey, B>;
+    populate<B extends boolean = false, K extends string = string>(keys: K[], options?: PopulateOptions<B>): PopulateTable<T, TKey, B, K>;
+    populate<B extends boolean = false>(options?: PopulateOptions<B>): PopulateTable<T, TKey, B, string>;
+    populate<B extends boolean = false, K extends string = string>(keysOrOptions?: K[] | PopulateOptions<B>): PopulateTable<T, TKey, B, K>;
 }
 // tslint:enable: unified-signatures
 
@@ -23,10 +23,10 @@ export function getTableExtended<T, TKey>(db: DexieExt): TableExtended<T, TKey> 
 
         private _relationalSchema = db._relationalSchema;
 
-        public populate<B extends boolean = false>(
-            keysOrOptions?: string[] | PopulateOptions<B>
-        ): PopulateTable<T, TKey, B> {
-            return new PopulateTable<T, TKey, B>(keysOrOptions, db, this, this._relationalSchema);
+        public populate<B extends boolean = false, K extends string = string>(
+            keysOrOptions?: K[] | PopulateOptions<B>
+        ): PopulateTable<T, TKey, B, K> {
+            return new PopulateTable<T, TKey, B, K>(keysOrOptions, db, this, this._relationalSchema);
         }
 
         constructor(

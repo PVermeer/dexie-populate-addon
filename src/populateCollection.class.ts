@@ -17,7 +17,7 @@ export interface CollectionPopulated<T, TKey> extends Collection<T, TKey> { }
  * From here the Collection class can be extended to override some methods
  * when table.populate() is called.
  */
-export function getCollectionPopulated<M, MKey, B extends boolean>(
+export function getCollectionPopulated<M, MKey, B extends boolean, K extends string>(
     whereClause: WhereClause | null,
     keysOrOptions: string[] | PopulateOptions<B> | undefined,
     db: DexieExt,
@@ -32,13 +32,13 @@ export function getCollectionPopulated<M, MKey, B extends boolean>(
     class CollectionPopulatedClass<T, TKey> extends collection<T, TKey> {
 
         public toArray<R>(
-            thenShortcut: ThenShortcut<Populated<any, B>[], R> = (value: any) => value
+            thenShortcut: ThenShortcut<Populated<T, B, K>[], R> = (value: any) => value
         ): PromiseExtended<R> {
 
             // Not using async / await so PromiseExtended is returned
             return super.toArray()
                 .then(results => {
-                    const populatedClass = new Populate<T, B>(results, keysOrOptions, db, table, relationalSchema);
+                    const populatedClass = new Populate<T, B, K>(results, keysOrOptions, db, table, relationalSchema);
                     return populatedClass.populated;
                 })
                 .then(popResults => thenShortcut(popResults));
@@ -54,7 +54,7 @@ export function getCollectionPopulated<M, MKey, B extends boolean>(
             const cursors: { key: IndexableType, primaryKey: TKey }[] = [];
             return super.each((x, y) => records.push(x) && cursors.push(y))
                 .then(async () => {
-                    const populatedClass = new Populate<T, B>(records, keysOrOptions, db, table, relationalSchema);
+                    const populatedClass = new Populate<T, B, K>(records, keysOrOptions, db, table, relationalSchema);
                     const recordsPop = await populatedClass.populated;
                     recordsPop.forEach((x, i) => callback(x, cursors[i]));
                     return;

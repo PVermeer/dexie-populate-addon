@@ -13,7 +13,7 @@ describe('Populate', () => {
             let friend: Friend;
             let id: number;
             let updateId: number;
-            let friendPop: Populated<Friend, false>;
+            let friendPop: Populated<Friend, false, string>;
 
             let hasFriends: Friend[];
             let hasFriendIds: number[];
@@ -68,10 +68,10 @@ describe('Populate', () => {
                 friend.hasFriends = hasFriendIds;
                 friend.memberOf = clubIds;
 
-                friendPop = cloneDeep(friend) as Populated<Friend, false>;
-                friendPop.hasFriends = hasFriends as Populated<Friend, false>[];
-                friendPop.memberOf = clubs as Populated<Club, false>[];
-                friendPop.memberOf[0]!.theme = themes[0] as Populated<Theme, false>;
+                friendPop = cloneDeep(friend) as Populated<Friend, false, string>;
+                friendPop.hasFriends = hasFriends as Populated<Friend, false, string>[];
+                friendPop.memberOf = clubs as Populated<Club, false, string>[];
+                friendPop.memberOf[0]!.theme = themes[0] as Populated<Theme, false, string>;
             });
             afterEach(async () => {
                 await db.delete();
@@ -94,7 +94,7 @@ describe('Populate', () => {
                                 it('should be populated with friends deep', async () => {
                                     const getFriend = await method(id);
                                     expect(
-                                        (getFriend!.hasFriends! as (Populated<Friend, false>)[])[1]
+                                        (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[1]
                                             .hasFriends![0] instanceof Friend
                                     ).toBeTrue();
                                 });
@@ -107,7 +107,7 @@ describe('Populate', () => {
                                     await db.friends.update(hasFriendIds[0], { hasFriends: [9999] });
                                     const getFriend = await method(id);
                                     expect(
-                                        (getFriend!.hasFriends! as (Populated<Friend, false>)[])[0]
+                                        (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[0]
                                             .hasFriends![0]
                                     ).toBe(null);
                                 });
@@ -130,7 +130,7 @@ describe('Populate', () => {
                                     it('should be populated with club => theme deep', async () => {
                                         const getFriend = await method(id);
                                         expect(
-                                            (getFriend!.memberOf! as (Populated<Club, false>)[])[1]
+                                            (getFriend!.memberOf! as (Populated<Club, false, string>)[])[1]
                                                 .theme instanceof Theme
                                         ).toBeTrue();
                                     });

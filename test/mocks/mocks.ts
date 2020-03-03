@@ -178,7 +178,7 @@ export const methodsPositive = [
         desc: 'Table.populate().each()',
         populated: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
-            new Promise((res: (value: Populated<Friend, false>) => void) =>
+            new Promise((res: (value: Populated<Friend, false, string>) => void) =>
                 db.friends.populate({ shallow: _shallow }).each(x => res(x)))
     },
     {
@@ -186,8 +186,8 @@ export const methodsPositive = [
         populated: true,
         populatedPartial: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
-            new Promise((res: (value: Populated<Friend, false>) => void) =>
-                db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).each(x => res(x)))
+            new Promise((res: (value: Populated<Friend, false, string>) => void) =>
+                db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).each(x => res(x as any)))
     },
     {
         desc: 'Table.each()',
@@ -200,16 +200,16 @@ export const methodsPositive = [
         desc: 'Table.populate().where().each()',
         populated: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
-            new Promise((res: (value: Populated<Friend, false>) => void) =>
-                db.friends.populate({ shallow: _shallow }).where(':id').equals(_id).each(x => res(x)))
+            new Promise((res: (value: Populated<Friend, false, string>) => void) =>
+                db.friends.populate({ shallow: _shallow }).where(':id').equals(_id).each(x => res(x as any)))
     },
     {
         desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style']).where().each()`,
         populated: true,
         populatedPartial: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
-            new Promise((res: (value: Populated<Friend, false>) => void) =>
-                db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).where(':id').equals(_id).each(x => res(x)))
+            new Promise((res: (value: Populated<Friend, false, string>) => void) =>
+                db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).where(':id').equals(_id).each(x => res(x as any)))
     },
     {
         desc: 'Table.where().each()',
@@ -238,14 +238,14 @@ export const methodsNegative = [
         populated: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
             db.friends.populate(['sdfsdf'])
-                .each(x => x) as unknown as PromiseExtended<Populated<Friend, false>>
+                .each(x => x) as unknown as PromiseExtended<Populated<Friend, false, 'sdfsdf'>>
     },
     {
         desc: 'Table.populate().where().each()',
         populated: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
             db.friends.populate(['sdfsdf']).where(':id').equals(_id)
-                .each(x => x) as unknown as PromiseExtended<Populated<Friend, false>>
+                .each(x => x) as unknown as PromiseExtended<Populated<Friend, false, 'sdfsdf'>>
     }
 ];
 

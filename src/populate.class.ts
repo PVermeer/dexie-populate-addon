@@ -14,9 +14,9 @@ interface MappedIds {
     };
 }
 
-export class Populate<T, B extends boolean> {
+export class Populate<T, B extends boolean, K extends string> {
 
-    private _populated: Populated<T, B>[];
+    private _populated: Populated<T, B, K>[];
     private _keysToPopulate: string[] | undefined;
     private _options: PopulateOptions<B> | undefined;
 
@@ -49,7 +49,7 @@ export class Populate<T, B extends boolean> {
 
         await this._recursivePopulate(this._table.name, populated);
 
-        this._populated = populated as Populated<T, B>[];
+        this._populated = populated as Populated<T, B, K>[];
         return this._populated;
     }
 

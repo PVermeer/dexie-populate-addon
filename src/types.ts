@@ -1,5 +1,5 @@
 import { Dexie, IndexableType, Table, TableSchema, Transaction } from 'dexie';
-import { Nominal, UnionizeTuple } from 'simplytyped';
+import { Nominal } from 'simplytyped';
 import { RelationalDbSchema } from './schema-parser';
 import { TableExtended } from './tableExt.class';
 
@@ -21,14 +21,14 @@ export type Ref<O extends object, K extends IndexableType, _N = 'Ref'> = Nominal
 /**
  * Overwrite the return type to the type as given in the Ref type after refs are populated.
  */
-export type Populated<T, B extends boolean, O extends string[] = string[]> = {
+export type Populated<T, B extends boolean, O extends string> = {
 
     // Check for nominal Ref on properties:
     [P in keyof T]: T[P] extends Ref<infer X, infer Y, infer N> ?
     N extends 'Ref' ?
 
     // Check for partial population:
-    P extends UnionizeTuple<O> ?
+    P extends O ?
 
     // Overwrite the properties where ref is found:
     RecursivePopulate<B, X, O>
@@ -52,7 +52,7 @@ declare module 'dexie' {
 type NominalRef<T, R extends string = 'Ref'> = Nominal<T, R>;
 type NominalT<T> = T extends any[] ? { [P in keyof T]: NominalRef<T[P]> | null } : NominalRef<T> | null;
 
-type RecursivePopulate<B extends boolean, X, O extends string[]> =
+type RecursivePopulate<B extends boolean, X, O extends string> =
     // Check if shallow is true:
     B extends true ?
 

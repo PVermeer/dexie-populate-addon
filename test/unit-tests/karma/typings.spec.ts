@@ -34,7 +34,7 @@ describe('Typings', () => {
                 const groupIds = await Promise.all(groups.map(x => db.groups.add(x)));
                 const themeIds = await Promise.all(themes.map(x => db.themes.add(x)));
                 const styleIds = await Promise.all(styles.map(x => db.styles.add(x)));
-                const friendPop = cloneDeep(friend) as Populated<Friend, true>;
+                const friendPop = cloneDeep(friend) as Populated<Friend, true, string>;
 
                 await db.friends.update(friendId, {
                     hasFriends: friendIds,
@@ -167,6 +167,7 @@ describe('Typings', () => {
                     isMemberOf.theme!.style!.color = 'asdasd';
                     isMemberOf = null;
 
+                    test.group = 2;
                 });
 
                 // ======= Not Populated =======
@@ -207,13 +208,13 @@ describe('Typings', () => {
                 await new Promise((res: (value: Friend) => void) =>
                     db.friends.each(x => res(x)));
 
-                await new Promise((res: (value: Populated<Friend, true>) => void) =>
+                await new Promise((res: (value: Populated<Friend, true, string>) => void) =>
                     db.friends.populate({ shallow: true }).each(x => res(x)));
 
                 await new Promise((res: (value: Friend) => void) =>
                     db.friends.where(':id').equals(1).each(x => res(x)));
 
-                await new Promise((res: (value: Populated<Friend, true>) => void) =>
+                await new Promise((res: (value: Populated<Friend, true, string>) => void) =>
                     db.friends.populate({ shallow: true }).where(':id').equals(1).each(x => res(x)));
 
                 expect(true).toBeTrue();

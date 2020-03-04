@@ -169,10 +169,23 @@ export const methodsPositive = [
             db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).where(':id').equals(_id).first()
     },
     {
+        desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style']).where({ id })`,
+        populated: true,
+        populatedPartial: true,
+        method: (db: TestDatabaseType) => (id: number, _shallow = false) =>
+            db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).where({ id }).first()
+    },
+    {
         desc: 'Table.where()',
         populated: false,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
             db.friends.where(':id').equals(_id).first()
+    },
+    {
+        desc: 'Table.where({ id })',
+        populated: false,
+        method: (db: TestDatabaseType) => (id: number, _shallow = false) =>
+            db.friends.where({ id }).first()
     },
     {
         desc: 'Table.populate().each()',

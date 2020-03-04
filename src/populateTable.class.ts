@@ -1,6 +1,6 @@
 // tslint:disable: unified-signatures
 // tslint:disable: space-before-function-paren
-import { IndexableType, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
+import { Collection, IndexableType, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
 import { Populate } from './populate.class';
 import { CollectionPopulated, getCollectionPopulated } from './populateCollection.class';
 import { RelationalDbSchema } from './schema-parser';
@@ -36,10 +36,28 @@ export class PopulateTable<T, TKey, B extends boolean, K extends string> {
     where(equalityCriterias: { [key: string]: IndexableType }): CollectionPopulated<Populated<T, B, K>, TKey>;
 
     public where(
-        indexOrequalityCriterias: string | string[] | { [key: string]: IndexableType }
-    ): WhereClause<T, TKey> | CollectionPopulated<Populated<T, B, K>, TKey> {
+        indexOrequalityCriterias: string | string[] | { [key: string]: any }
+    ) {
 
-        const whereClause = this._table.where(indexOrequalityCriterias as any);
+        let whereClause: WhereClause<T, TKey> | undefined;
+        let collection: Collection<T, TKey> | undefined;
+
+        const whereClauseOrCollection = this._table
+            // No combined overload so strong typed
+            .where(indexOrequalityCriterias as any) as WhereClause<T, TKey> | Collection<T, TKey>;
+
+        /*
+        Check what's returned.
+        Alltough typings of Dexie.js says otherwise,
+        a Collection class cannot be constructed without a WhereClause
+        */
+        if (whereClauseOrCollection instanceof this._db.Collection) {
+            collection = whereClauseOrCollection;
+            whereClause = this._table.where('');
+        } else {
+            whereClause = whereClauseOrCollection;
+        }
+
         const CollectionPopulatedClass = getCollectionPopulated<T, TKey, B, K>(
             whereClause,
             this._keysOrOptions,
@@ -49,11 +67,17 @@ export class PopulateTable<T, TKey, B extends boolean, K extends string> {
         );
 
         // Override the Collection getter to return the new class
-        Object.defineProperty(whereClause, 'Collection', {
+        Object.defineProperty(whereClauseOrCollection, 'Collection', {
             get(this) { return CollectionPopulatedClass; }
         });
 
+        if (collection) {
+            const collectionPop = new CollectionPopulatedClass(whereClause, undefined, collection);
+            return collectionPop;
+        }
+
         return whereClause;
+
     }
 
     /**

@@ -5,8 +5,8 @@ import { RelationalDbSchema } from './schema-parser';
 import { DexieExt, Populated, PopulateOptions } from './types';
 
 // Interfaces to extend Dexie declarations. A lot of properties are not exposed :(
-interface WhereClauseExt extends WhereClause {
-    Collection: new <T, TKey>(whereClause?: WhereClause | null, keyRangeGenerator?: () => KeyRange) => Collection<T, TKey>;
+export interface WhereClauseExtended<T, TKey> {
+    Collection: new (whereClause?: WhereClause | null, keyRangeGenerator?: () => KeyRange) => Collection<T, TKey>;
 }
 
 export interface CollectionPopulated<T, TKey> extends Collection<T, TKey> { }
@@ -17,19 +17,19 @@ export interface CollectionPopulated<T, TKey> extends Collection<T, TKey> { }
  * From here the Collection class can be extended to override some methods
  * when table.populate() is called.
  */
-export function getCollectionPopulated<M, MKey, B extends boolean, K extends string>(
-    whereClause: WhereClause | null,
+export function getCollectionPopulated<T extends any, TKey, B extends boolean, K extends string>(
+    whereClause: WhereClause<T, TKey> | null | undefined,
     keysOrOptions: string[] | PopulateOptions<B> | undefined,
     db: DexieExt,
     table: Table,
     relationalSchema: RelationalDbSchema
-): CollectionPopulated<M, MKey> {
+) {
 
-    const whereClauseExt = whereClause as WhereClauseExt;
+    const whereClauseExt = whereClause as WhereClauseExtended<T, TKey>;
     const collection = whereClauseExt.Collection;
 
     /** New collection class where methods are overwritten to support population */
-    class CollectionPopulatedClass<T, TKey> extends collection<T, TKey> {
+    return class CollectionPopulatedClass extends collection {
 
         public toArray<R>(
             thenShortcut: ThenShortcut<Populated<T, B, K>[], R> = (value: any) => value
@@ -62,13 +62,20 @@ export function getCollectionPopulated<M, MKey, B extends boolean, K extends str
         }
 
         constructor(
-            _whereClause?: WhereClause | null,
-            _keyRangeGenerator?: () => KeyRange
+            _whereClause: WhereClause<T, TKey> | null | undefined,
+            _keyRangeGenerator: (() => KeyRange) | undefined,
+            _collection?: Collection<T, TKey>
         ) {
-            super(_whereClause, _keyRangeGenerator);
-        }
-    }
+            super(_whereClause as any, _keyRangeGenerator);
 
-    // Generating declarations will error when class is dynamically contructed, so any.
-    return CollectionPopulatedClass as any;
+            // Because original WhereClause is not on the collection class,
+            // a new class can be created and then overwritten by the Collection props
+            if (collection) {
+                Object.entries(collection).forEach(([key, value]) => {
+                    this[key] = value;
+                });
+            }
+        }
+    };
+
 }

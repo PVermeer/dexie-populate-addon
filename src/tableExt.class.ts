@@ -15,13 +15,13 @@ export interface TableExtended<T, TKey> {
 }
 // tslint:enable: unified-signatures
 
-export function getTableExtended<T, TKey>(db: DexieExt): TableExtended<T, TKey> {
+export function getTableExtended<T, TKey>(db: DexieExt) {
 
     const TableClass = db.Table;
 
-    class TableExt extends TableClass<T, TKey> {
+    return class TableExt extends TableClass<T, TKey> {
 
-        private _relationalSchema = db._relationalSchema;
+        public _relationalSchema = db._relationalSchema;
 
         public populate<B extends boolean = false, K extends string = string>(
             keysOrOptions?: K[] | PopulateOptions<B>
@@ -37,8 +37,6 @@ export function getTableExtended<T, TKey>(db: DexieExt): TableExtended<T, TKey> 
             super(_name, _tableSchema, _optionalTrans);
         }
 
-    }
+    };
 
-    // Generating declarations will error when class is dynamically contructed, so any.
-    return TableExt as any;
 }

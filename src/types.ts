@@ -1,11 +1,13 @@
-import { Dexie, IndexableType, Table, TableSchema, Transaction } from 'dexie';
+import { Collection, Dexie, IndexableType, KeyRange, Table, TableSchema, Transaction, WhereClause } from 'dexie';
 import { Nominal } from 'simplytyped';
+import { WhereClauseExtended } from './populateCollection.class';
 import { RelationalDbSchema } from './schema-parser';
 import { TableExtended } from './tableExt.class';
 
 export interface DexieExt extends Dexie {
     _relationalSchema: RelationalDbSchema;
     Table: new <T, TKey>(name: string, tableSchema: TableSchema, optionalTrans?: Transaction) => Table<T, TKey>;
+    Collection: new <T, TKey>(whereClause?: WhereClause | null, keyRangeGenerator?: () => KeyRange) => Collection<T, TKey>;
 }
 
 export interface PopulateOptions<B extends boolean = false> {
@@ -46,6 +48,7 @@ declare module 'dexie' {
      * Extended Table class with populate methods
      */
     interface Table<T, TKey> extends TableExtended<T, TKey> { }
+    interface WhereClause<T, TKey> extends WhereClauseExtended<T, TKey> { }
 
 }
 

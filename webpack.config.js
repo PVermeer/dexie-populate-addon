@@ -79,9 +79,9 @@ const bundleConfig = {
         new BundleAnalyzerPlugin({
             analyzerMode: 'static',
             openAnalyzer: false,
-            reportFilename: '../reports/webpack-report.html',
+            reportFilename: '../reports/bundle/webpack-report.html',
             generateStatsFile: true,
-            statsFilename: '../reports/webpack-stats.json',
+            statsFilename: '../reports/bundle/webpack-stats.json',
             statsOptions: {
                 source: false,
                 usedExports: true,

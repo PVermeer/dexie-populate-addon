@@ -1,6 +1,6 @@
 // tslint:disable: unified-signatures
 import { IndexableType, Table } from 'dexie';
-import { cloneDeep, isEqual, uniqBy } from 'lodash';
+import { cloneDeep, flatten, isEqual, uniqBy } from 'lodash';
 import { RelationalDbSchema } from './schema-parser';
 import { DexieExt, Populated, PopulateOptions } from './types';
 
@@ -149,7 +149,9 @@ export class Populate<T, B extends boolean, K extends string> {
         if (Object.keys(deepRefsToPopulate).length) {
             await Promise.all(
                 Object.entries(deepRefsToPopulate)
-                    .map(([table, refs]) => this._recursivePopulate(table, refs.flat()))
+                    /* Using lodash flatten (instead of Array.flat())
+                     because Edge just updated to support Array.flat() and MS updates slow */
+                    .map(([table, refs]) => this._recursivePopulate(table, flatten(refs)))
             );
         }
     }

@@ -29,7 +29,7 @@ function karmaConfig(config) {
                     {
                         test: /\.tsx?$/,
                         use: 'ts-loader',
-                        exclude: /node_modules/,
+                        exclude: /node_modules/
                     },
                     {
                         test: /\.ts$/, // Setting tsx breaks it ???
@@ -45,7 +45,10 @@ function karmaConfig(config) {
             resolve: {
                 extensions: ['.tsx', '.ts', '.js', '.json']
             },
-            devtool: 'inline-source-map'
+            devtool: 'inline-source-map',
+            plugins: [
+                new ExitOnErrorWebpackPlugin()
+            ]
         },
         coverageIstanbulReporter: {
             reports: ['text-summary', 'html'],
@@ -97,3 +100,19 @@ module.exports = function (config) {
     config.set(karmaConfig(config));
 };
 module.exports.mainKarmaConfig = karmaConfig;
+
+/**
+ * Custom plugin to exit > 0 karma when TS compiler errors
+ */
+class ExitOnErrorWebpackPlugin {
+    apply(compiler) {
+        compiler.hooks.done.tap("ExitOnErrorWebpackPlugin", stats => {
+            if (stats && stats.hasErrors()) {
+                stats.toJson().errors.forEach(err => {
+                    console.error(err);
+                });
+                process.exit(1);
+            }
+        });
+    }
+}

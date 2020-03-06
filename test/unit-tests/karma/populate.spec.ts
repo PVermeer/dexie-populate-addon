@@ -1,8 +1,8 @@
 // tslint:disable: no-non-null-assertion
 import Dexie from 'dexie';
 import { cloneDeep } from 'lodash-es';
-import { Populated } from '../../../src/types';
-import { Club, databasesPositive, Friend, Group, methodsNegative, methodsPositive, mockClubs, mockFriends, mockGroups, mockStyles, mockThemes, Style, Theme } from '../../mocks/mocks';
+import { DexieExt, Populated } from '../../../src/types';
+import { Club, databasesPositive, Friend, Group, HairColor, methodsNegative, methodsPositive, mockClubs, mockFriends, mockGroups, mockHairColors, mockStyles, mockThemes, Style, testDatabaseNoRelationalKeys, testDatabaseNoTableForRelationalKeys, Theme } from '../../mocks/mocks';
 
 describe('Populate', () => {
     databasesPositive.forEach((database, _i) => {
@@ -30,6 +30,9 @@ describe('Populate', () => {
             let styles: Style[];
             let styleIds: number[];
 
+            let hairColors: HairColor[];
+            let hairColorIds: number[];
+
             beforeEach(async () => {
                 db = database.db(Dexie);
                 await db.open();
@@ -40,6 +43,7 @@ describe('Populate', () => {
                 themes = mockThemes();
                 groups = mockGroups();
                 styles = mockStyles();
+                hairColors = mockHairColors();
 
                 id = await db.friends.add(friend);
                 updateId = database.desc !== 'TestDatabaseCustomKey' && id > 1000000 ? 1 : id;
@@ -49,11 +53,13 @@ describe('Populate', () => {
                 themeIds = await Promise.all(themes.map(x => db.themes.add(x)));
                 groupIds = await Promise.all(groups.map(x => db.groups.add(x)));
                 styleIds = await Promise.all(styles.map(x => db.styles.add(x)));
+                hairColorIds = await Promise.all(hairColors.map(x => db.hairColors.add(x)));
 
                 await db.friends.update(updateId, {
                     hasFriends: hasFriendIds,
                     memberOf: clubIds,
-                    group: groupIds[1]
+                    group: groupIds[1],
+                    hairColor: hairColorIds[1]
                 });
                 await db.friends.update(hasFriendIds[1], {
                     hasFriends: [hasFriendIds[2]]
@@ -75,6 +81,16 @@ describe('Populate', () => {
             });
             afterEach(async () => {
                 await db.delete();
+            });
+            it('should have addon registered', () => {
+                const dbExt = db as unknown as DexieExt;
+                expect(dbExt.pVermeerAddonsRegistered.populate).toBeTrue();
+            });
+            it('should have extra properties', () => {
+                expect(Object.keys(db)).toEqual(jasmine.arrayContaining([
+                    '_relationalSchema',
+                    '_storesSpec'
+                ]));
             });
             describe('Methods', () => {
                 methodsPositive.forEach((_method, _j) => {
@@ -99,16 +115,25 @@ describe('Populate', () => {
                                     ).toBeTrue();
                                 });
                                 it('should be null if not found', async () => {
-                                    await db.friends.update(updateId, { hasFriends: [9999] });
+                                    await db.friends.update(updateId, {
+                                        hasFriends: [9999],
+                                        hairColor: 8888
+                                    });
                                     const getFriend = await method(id);
                                     expect(getFriend!.hasFriends![0]).toBe(null);
+                                    expect(getFriend!.hairColor).toBe(null);
                                 });
                                 it('should be null if not found deep', async () => {
-                                    await db.friends.update(hasFriendIds[0], { hasFriends: [9999] });
+                                    await db.friends.update(hasFriendIds[0], {
+                                        hasFriends: [9999],
+                                        hairColor: 8888
+                                    });
                                     const getFriend = await method(id);
                                     expect(
-                                        (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[0]
-                                            .hasFriends![0]
+                                        (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[0].hasFriends![0]
+                                    ).toBe(null);
+                                    expect(
+                                        (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[0].group
                                     ).toBe(null);
                                 });
                                 if (!_method.desc.endsWith('each()')) {
@@ -158,6 +183,32 @@ describe('Populate', () => {
                                     });
                                 }
                             });
+                            describe('Shallow', () => {
+                                if (!_method.populatedPartial) { // Does nothing for partial population (yet?)
+                                    it('should be populated with friends', async () => {
+                                        const getFriend = await method(id, true);
+                                        expect(getFriend!.hasFriends!.every((x: any) => x instanceof Friend)).toBeTrue();
+                                    });
+                                    it('should not be populated with friends deep', async () => {
+                                        const getFriend = await method(id, true);
+                                        expect(
+                                            typeof (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[1]
+                                                .hasFriends![0] === 'number'
+                                        ).toBeTrue();
+                                    });
+                                    it('should be populated with clubs', async () => {
+                                        const getFriend = await method(id, true);
+                                        expect(getFriend!.memberOf!.every((x: any) => x instanceof Club)).toBeTrue();
+                                    });
+                                    it('should not be populated with clubs deep', async () => {
+                                        const getFriend = await method(id, true);
+                                        expect(
+                                            typeof (getFriend!.memberOf! as (Populated<Club, false, string>)[])[1]
+                                                .theme === 'number'
+                                        ).toBeTrue();
+                                    });
+                                }
+                            });
                         }
                         if (!_method.populated) {
                             describe('Normal', () => {
@@ -189,6 +240,10 @@ describe('Populate', () => {
                             });
                         });
                     });
+                });
+                it('should be ok to provide any options object', async () => {
+                    const testFriend = await db.friends.populate({ cxvbbngf: false } as any).get(id);
+                    expect(testFriend instanceof Friend).toBeTrue();
                 });
             });
             describe('ThenSchortcut', () => {
@@ -225,6 +280,21 @@ describe('Populate', () => {
                     });
                 });
             });
+        });
+    });
+    describe('No relational keys provided', () => {
+        it('should call console.warn()', async () => {
+            spyOn(console, 'warn').and.callFake(() => void 0);
+            const db = testDatabaseNoRelationalKeys(Dexie);
+            await db.open();
+            expect(console.warn).toHaveBeenCalledWith('DEXIE POPULATE: No relational keys are set');
+        });
+    });
+    describe('No matching tables for relational keys provided', () => {
+        it('should throw', async () => {
+            const db = testDatabaseNoTableForRelationalKeys(Dexie);
+            await expectAsync(db.open()).toBeRejectedWithError('DEXIE POPULATE: Relation schema does not match the db tables, now closing database');
+            expect(db.isOpen()).toBeFalse();
         });
     });
 });

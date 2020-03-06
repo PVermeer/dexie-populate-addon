@@ -3,7 +3,7 @@
 import { Collection, IndexableType, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
 import { Populate } from './populate.class';
 import { CollectionPopulated, getCollectionPopulated } from './populateCollection.class';
-import { RelationalDbSchema } from './schema-parser';
+import { RelationalDbSchema } from './schema-parser.class';
 import { DexieExt, Populated, PopulateOptions } from './types';
 
 export class PopulateTable<T, TKey, B extends boolean, K extends string> {

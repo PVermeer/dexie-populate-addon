@@ -1,11 +1,13 @@
 import { Collection, Dexie, IndexableType, KeyRange, Table, TableSchema, Transaction, WhereClause } from 'dexie';
 import { Nominal } from 'simplytyped';
 import { WhereClauseExtended } from './populateCollection.class';
-import { RelationalDbSchema } from './schema-parser';
+import { RelationalDbSchema, StoreSchemas } from './schema-parser.class';
 import { TableExtended } from './tableExt.class';
 
 export interface DexieExt extends Dexie {
+    pVermeerAddonsRegistered: { [addon: string]: boolean };
     _relationalSchema: RelationalDbSchema;
+    _storesSpec: StoreSchemas;
     Table: new <T, TKey>(name: string, tableSchema: TableSchema, optionalTrans?: Transaction) => Table<T, TKey>;
     Collection: new <T, TKey>(whereClause?: WhereClause | null, keyRangeGenerator?: () => KeyRange) => Collection<T, TKey>;
 }

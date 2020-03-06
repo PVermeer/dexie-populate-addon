@@ -18,7 +18,7 @@ export class SchemaParser {
      */
     public getRelationalKeys(): RelationalDbSchema {
         return Object.entries(this._schema).reduce<RelationalDbSchema>((acc, [table, value]) => {
-            if (!value) { return acc; }
+            if (!value || typeof value !== 'string') { return acc; }
 
             const relationalKeys = value
                 .split(',')
@@ -40,12 +40,13 @@ export class SchemaParser {
      */
     public getCleanedSchema(): StoreSchemas {
         return Object.entries(this._schema).reduce<StoreSchemas>((acc, [table, value]) => {
-            if (!value) { return acc; }
+            if (!value || typeof value !== 'string') { return { ...acc, [table]: value }; }
 
             const sanitized = value
                 .split(',')
-                .map(x => x.trim().split('=>')[0])
-                .join(',');
+                .map(x => x.split('=>')[0])
+                .map(x => x.trim())
+                .join(', ');
 
             return { ...acc, [table]: sanitized };
         }, {});

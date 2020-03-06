@@ -1,7 +1,7 @@
 // tslint:disable: space-before-function-paren
 import { Collection, IndexableType, KeyRange, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
 import { Populate } from './populate.class';
-import { RelationalDbSchema } from './schema-parser';
+import { RelationalDbSchema } from './schema-parser.class';
 import { DexieExt, Populated, PopulateOptions } from './types';
 
 // Interfaces to extend Dexie declarations. A lot of properties are not exposed :(
@@ -62,16 +62,16 @@ export function getCollectionPopulated<T extends any, TKey, B extends boolean, K
         }
 
         constructor(
-            _whereClause: WhereClause<T, TKey> | null | undefined,
-            _keyRangeGenerator: (() => KeyRange) | undefined,
+            _whereClause?: WhereClause<T, TKey> | null,
+            _keyRangeGenerator?: (() => KeyRange),
             _collection?: Collection<T, TKey>
         ) {
             super(_whereClause as any, _keyRangeGenerator);
 
             // Because original WhereClause is not on the collection class,
             // a new class can be created and then overwritten by the Collection props
-            if (collection) {
-                Object.entries(collection).forEach(([key, value]) => {
+            if (_collection) {
+                Object.entries(_collection).forEach(([key, value]) => {
                     this[key] = value;
                 });
             }

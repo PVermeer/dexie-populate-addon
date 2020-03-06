@@ -1,7 +1,7 @@
 // tslint:disable: unified-signatures
 import { IndexableType, Table } from 'dexie';
 import { cloneDeep, flatten, isEqual, uniqBy } from 'lodash';
-import { RelationalDbSchema } from './schema-parser';
+import { RelationalDbSchema } from './schema-parser.class';
 import { DexieExt, Populated, PopulateOptions } from './types';
 
 interface MappedIds {
@@ -103,7 +103,7 @@ export class Populate<T, B extends boolean, K extends string> {
                 // Get results
                 const promise = this._db.table(targetTable)
                     .where(targetKey)
-                    .anyOf(uniqueIds) // Should be fixed in Dexie v3
+                    .anyOf(uniqueIds)
                     .toArray()
 
                     // Set the result on the populated record by reference
@@ -112,12 +112,12 @@ export class Populate<T, B extends boolean, K extends string> {
                             const { ref, key } = entry;
                             const refKey = ref[key];
 
-                            const newRefKey = Array.isArray(refKey) ?
+                            const newRefKey: any = Array.isArray(refKey) ?
                                 refKey.map(value => results.find(x => x[targetKey] === value) || null) :
                                 results.find(result => result[targetKey] === refKey) || null;
 
                             // Error checking
-                            const isCircular = Array.isArray(newRefKey) && newRefKey.some(x => x ?
+                            const isCircular = !newRefKey ? false : Array.isArray(newRefKey) && newRefKey.some(x => x ?
                                 isEqual(x[key], ref[key]) : false) ||
                                 isEqual(newRefKey[key], ref[key]);
 

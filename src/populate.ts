@@ -1,12 +1,18 @@
 // tslint:disable: space-before-function-paren // Conflict with default formatter vscode
 import Dexie from 'dexie';
-import { SchemaParser, StoreSchemas } from './schema-parser';
+import { SchemaParser, StoreSchemas } from './schema-parser.class';
 import { getTableExtended } from './tableExt.class';
 import { DexieExt } from './types';
 
 export function populate(db: Dexie) {
 
     const dbExt = db as DexieExt;
+
+    // Register addon
+    dbExt.pVermeerAddonsRegistered = {
+        ...dbExt.pVermeerAddonsRegistered,
+        populate: true
+    };
 
     // Get the relational keys from the schema and return the function with a clean schema.
     (db.Version.prototype as any)._parseStoresSpec = Dexie.override(
@@ -19,6 +25,7 @@ export function populate(db: Dexie) {
                 const cleanedSchema = parser.getCleanedSchema();
 
                 dbExt._relationalSchema = relationalKeys;
+                dbExt._storesSpec = storesSpec;
 
                 // Return the original function with cleaned schema.
                 return origFunc.apply(this, [cleanedSchema, outSchema]);

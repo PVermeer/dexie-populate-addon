@@ -4,6 +4,21 @@ import faker from 'faker/locale/nl';
 import { populate } from '../../src/populate';
 import { Populated, Ref } from '../../src/types';
 
+export class HairColor {
+    id?: number;
+    name: string;
+
+    doSomething() {
+        return 'done';
+    }
+
+    constructor(input: OmitMethods<HairColor>) {
+        Object.entries(input).forEach(([key, value]) => {
+            this[key] = value;
+        });
+    }
+
+}
 export class Style {
     id?: number;
     name: string;
@@ -86,6 +101,7 @@ export class Friend {
     hasFriends: Ref<Friend[], number[]>;
     memberOf: Ref<Club[], number[]>;
     group: Ref<Group, number>;
+    hairColor: Ref<HairColor, number>;
 
     doSomething() {
         return 'done';
@@ -108,17 +124,19 @@ export const databasesPositive = [
             public themes: Dexie.Table<Theme, number>;
             public groups: Dexie.Table<Group, number>;
             public styles: Dexie.Table<Style, number>;
+            public hairColors: Dexie.Table<HairColor, number>;
 
             constructor(name: string) {
                 super(name);
                 populate(this);
                 this.on('blocked', () => false);
                 this.version(1).stores({
-                    friends: '++id, customId, firstName, lastName, shoeSize, age, hasFriends => friends.id, memberOf => clubs.id, group => groups.id',
+                    friends: '++id, customId, firstName, lastName, shoeSize, age, hasFriends => friends.id, memberOf => clubs.id, group => groups.id, hairColor => hairColors.id',
                     clubs: '++id, name, theme => themes.id',
                     themes: '++id, name, style => styles.id',
                     styles: '++id, name, color',
-                    groups: '++id, name'
+                    groups: '++id, name',
+                    hairColors: '++id, name'
                 });
 
                 this.friends.mapToClass(Friend);
@@ -126,16 +144,44 @@ export const databasesPositive = [
                 this.themes.mapToClass(Theme);
                 this.groups.mapToClass(Group);
                 this.styles.mapToClass(Style);
+                this.hairColors.mapToClass(HairColor);
             }
         }('TestDatabase')
     }
 ];
+
+export const testDatabaseNoRelationalKeys = (dexie: typeof Dexie) =>
+    new class TestDatabase extends dexie {
+        constructor(name: string) {
+            super(name);
+            populate(this);
+            this.on('blocked', () => false);
+            this.version(1).stores({
+                friends: '++id, customId, firstName, lastName, shoeSize, age',
+            });
+        }
+    }('Negative TestDatabase - no relational keys');
+
+export const testDatabaseNoTableForRelationalKeys = (dexie: typeof Dexie) =>
+    new class TestDatabase extends dexie {
+        constructor(name: string) {
+            super(name);
+            populate(this);
+            this.on('blocked', () => false);
+            this.version(1).stores({
+                friends: '++id, customId, firstName, lastName, shoeSize, age, group => groups.id',
+            });
+        }
+    }('Negative TestDatabase - no table for relational keys');
+
 
 export const databasesNegative = [];
 
 type TestDatabaseType = Dexie & { friends: Dexie.Table<Friend, number> };
 
 export const methodsPositive = [
+
+    // ======== Get() =========
     {
         desc: 'Table.populate().get()',
         populated: true,
@@ -143,11 +189,11 @@ export const methodsPositive = [
             db.friends.populate({ shallow: _shallow }).get(_id).then(x => x!)
     },
     {
-        desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style']).get()`,
+        desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).get()`,
         populated: true,
         populatedPartial: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
-            db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).get(_id).then(x => x!)
+            db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).get(_id).then(x => x!)
     },
     {
         desc: 'Table.get()',
@@ -155,6 +201,8 @@ export const methodsPositive = [
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
             db.friends.get(_id).then(x => x!)
     },
+
+    // ======== Where() =========
     {
         desc: 'Table.populate().where()',
         populated: true,
@@ -162,18 +210,18 @@ export const methodsPositive = [
             db.friends.populate({ shallow: _shallow }).where(':id').equals(_id).first()
     },
     {
-        desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style']).where()`,
+        desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).where()`,
         populated: true,
         populatedPartial: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
-            db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).where(':id').equals(_id).first()
+            db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).where(':id').equals(_id).first()
     },
     {
-        desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style']).where({ id })`,
+        desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).where({ id })`,
         populated: true,
         populatedPartial: true,
         method: (db: TestDatabaseType) => (id: number, _shallow = false) =>
-            db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).where({ id }).first()
+            db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).where({ id }).first()
     },
     {
         desc: 'Table.where()',
@@ -187,6 +235,16 @@ export const methodsPositive = [
         method: (db: TestDatabaseType) => (id: number, _shallow = false) =>
             db.friends.where({ id }).first()
     },
+
+    // ======== Where().toArray() =========
+    {
+        desc: 'Table.populate().where().toArray()',
+        populated: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).where(':id').equals(_id).toArray().then(x => x[0])
+    },
+
+    // ======== Each() =========
     {
         desc: 'Table.populate().each()',
         populated: true,
@@ -195,12 +253,12 @@ export const methodsPositive = [
                 db.friends.populate({ shallow: _shallow }).each(x => res(x)))
     },
     {
-        desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style']).each()`,
+        desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).each()`,
         populated: true,
         populatedPartial: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
             new Promise((res: (value: Populated<Friend, false, string>) => void) =>
-                db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).each(x => res(x as any)))
+                db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).each(x => res(x as any)))
     },
     {
         desc: 'Table.each()',
@@ -217,12 +275,16 @@ export const methodsPositive = [
                 db.friends.populate({ shallow: _shallow }).where(':id').equals(_id).each(x => res(x as any)))
     },
     {
-        desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style']).where().each()`,
+        desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).where().each()`,
         populated: true,
         populatedPartial: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
             new Promise((res: (value: Populated<Friend, false, string>) => void) =>
-                db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).where(':id').equals(_id).each(x => res(x as any)))
+                db.friends
+                    .populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor'])
+                    .where(':id')
+                    .equals(_id)
+                    .each(x => res(x as any)))
     },
     {
         desc: 'Table.where().each()',
@@ -271,7 +333,8 @@ export const mockFriends = (count: number = 5): Friend[] => {
         customId: faker.random.number({ min: 1000000, max: 9999999 }),
         hasFriends: [],
         memberOf: [],
-        group: null
+        group: null,
+        hairColor: null
     });
     return new Array(count).fill(null).map(() => friend());
 };
@@ -307,4 +370,10 @@ export const mockStyles = (count: number = 5): Style[] => {
         description: faker.lorem.sentences(4)
     });
     return new Array(count).fill(null).map(() => style());
+};
+export const mockHairColors = (count: number = 5): HairColor[] => {
+    const hairColor = () => new HairColor({
+        name: faker.lorem.words(2),
+    });
+    return new Array(count).fill(null).map(() => hairColor());
 };

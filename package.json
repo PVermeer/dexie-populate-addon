@@ -1,6 +1,6 @@
 {
   "name": "@pvermeer/dexie-populate-addon",
-  "version": "0.0.0-development",
+  "version": "1.0.0-beta.1",
   "description": "Addon for Dexie.js database to populate relationships",
   "main": "dist/index.js",
   "module": "dist/es6/index.js",

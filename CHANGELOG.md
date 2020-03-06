@@ -1,3 +1,10 @@
+# [1.0.0-beta.2](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2020-03-06)
+
+
+### Features
+
+* **to array:** toArray() can now be populated ([d43677f](https://github.com/PVermeer/dexie-populate-addon/commit/d43677f573b83c9bedad2141c89dbc018e58a00a))
+
 # 1.0.0-beta.1 (2020-03-06)
 
 

@@ -114,6 +114,10 @@ describe('Populate', () => {
                                             .hasFriends![0] instanceof Friend
                                     ).toBeTrue();
                                 });
+                                it('should be populated with clubs', async () => {
+                                    const getFriend = await method(id);
+                                    expect(getFriend!.memberOf!.every((x: any) => x instanceof Club)).toBeTrue();
+                                });
                                 it('should be null if not found', async () => {
                                     await db.friends.update(updateId, {
                                         hasFriends: [9999],
@@ -148,10 +152,6 @@ describe('Populate', () => {
                                         const getFriend = await method(id);
                                         expect(getFriend!.group! instanceof Group).toBeTrue();
                                     });
-                                    it('should be populated with clubs', async () => {
-                                        const getFriend = await method(id);
-                                        expect(getFriend!.memberOf!.every((x: any) => x instanceof Club)).toBeTrue();
-                                    });
                                     it('should be populated with club => theme deep', async () => {
                                         const getFriend = await method(id);
                                         expect(
@@ -161,14 +161,6 @@ describe('Populate', () => {
                                     });
                                 }
                                 if (_method.populatedPartial) {
-                                    it('should be populated with friends', async () => {
-                                        const getFriend = await method(id);
-                                        expect(getFriend!.hasFriends!.every((x: any) => x instanceof Friend)).toBeTrue();
-                                    });
-                                    it('should be populated with clubs', async () => {
-                                        const getFriend = await method(id);
-                                        expect(getFriend!.memberOf!.every((x: any) => x instanceof Club)).toBeTrue();
-                                    });
                                     it('should be populated with theme', async () => {
                                         const getFriend = await method(id);
                                         expect((getFriend!.memberOf![1]! as Club).theme instanceof Theme).toBeTrue();
@@ -185,20 +177,12 @@ describe('Populate', () => {
                             });
                             describe('Shallow', () => {
                                 if (!_method.populatedPartial) { // Does nothing for partial population (yet?)
-                                    it('should be populated with friends', async () => {
-                                        const getFriend = await method(id, true);
-                                        expect(getFriend!.hasFriends!.every((x: any) => x instanceof Friend)).toBeTrue();
-                                    });
                                     it('should not be populated with friends deep', async () => {
                                         const getFriend = await method(id, true);
                                         expect(
                                             typeof (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[1]
                                                 .hasFriends![0] === 'number'
                                         ).toBeTrue();
-                                    });
-                                    it('should be populated with clubs', async () => {
-                                        const getFriend = await method(id, true);
-                                        expect(getFriend!.memberOf!.every((x: any) => x instanceof Club)).toBeTrue();
                                     });
                                     it('should not be populated with clubs deep', async () => {
                                         const getFriend = await method(id, true);

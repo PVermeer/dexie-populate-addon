@@ -63,7 +63,7 @@ describe('HTML script tag', () => {
         });
         describe('Methods', () => {
             methodsPositive.forEach((_method, _j) => {
-                if (_j !== 0) { return; }
+                // if (_j !== 0) { return; }
                 let hasFriends: OmitMethods<Friend>[];
                 let friend: OmitMethods<Friend>;
                 let id: number;
@@ -83,11 +83,13 @@ describe('HTML script tag', () => {
                         });
                         method = _method.method(db as any);
                     });
-                    it('should be able to use populate()', async () => {
-                        const getFriend = await method(id);
-                        const expected = { ...friend, hasFriends };
-                        expect(getFriend).toEqual(expected as any);
-                    });
+                    if (_method.populated) {
+                        it('should be able to use populate()', async () => {
+                            const getFriend = await method(id);
+                            const expected = { ...friend, hasFriends };
+                            expect(getFriend).toEqual(expected as any);
+                        });
+                    }
                 });
             });
         });

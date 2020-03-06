@@ -189,6 +189,13 @@ export const methodsPositive = [
             db.friends.populate({ shallow: _shallow }).get(_id).then(x => x!)
     },
     {
+        desc: `Table.populate().get(cb)`,
+        populated: true,
+        populatedPartial: false,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).get(_id, cb => cb)
+    },
+    {
         desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).get()`,
         populated: true,
         populatedPartial: true,
@@ -202,12 +209,46 @@ export const methodsPositive = [
             db.friends.get(_id).then(x => x!)
     },
 
+    // ======== toArray() =========
+    {
+        desc: 'Table.populate().toArray()',
+        populated: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).toArray().then(x => x.find(y => y.id === _id))
+    },
+    {
+        desc: `Table.populate().toArray(cb)`,
+        populated: true,
+        populatedPartial: false,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).toArray(x => x!.find(y => y.id === _id))
+    },
+    {
+        desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).toArray()`,
+        populated: true,
+        populatedPartial: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).toArray().then(x => x.find(y => y.id === _id))
+    },
+    {
+        desc: 'Table.toArray()',
+        populated: false,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.toArray().then(x => x.find(y => y.id === _id))
+    },
+
     // ======== Where() =========
     {
         desc: 'Table.populate().where()',
         populated: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
             db.friends.populate({ shallow: _shallow }).where(':id').equals(_id).first()
+    },
+    {
+        desc: 'Table.populate().where(cb)',
+        populated: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).where(':id').equals(_id).first(cb => cb)
     },
     {
         desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).where()`,
@@ -242,6 +283,12 @@ export const methodsPositive = [
         populated: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
             db.friends.populate({ shallow: _shallow }).where(':id').equals(_id).toArray().then(x => x[0])
+    },
+    {
+        desc: 'Table.populate().where().toArray(cb)',
+        populated: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).where(':id').equals(_id).toArray(x => x[0])
     },
 
     // ======== Each() =========

@@ -202,6 +202,34 @@ export const methodsPositive = [
             db.friends.get(_id).then(x => x!)
     },
 
+    // ======== toArray() =========
+    {
+        desc: 'Table.populate().toArray()',
+        populated: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).toArray().then(x => x.find(y => y.id === _id))
+    },
+    {
+        desc: `Table.populate().toArray(cb)`,
+        populated: true,
+        populatedPartial: false,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).toArray(x => x!.find(y => y.id === _id))
+    },
+    {
+        desc: `Table.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).toArray()`,
+        populated: true,
+        populatedPartial: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style', 'hairColor']).toArray().then(x => x.find(y => y.id === _id))
+    },
+    {
+        desc: 'Table.toArray()',
+        populated: false,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.toArray().then(x => x.find(y => y.id === _id))
+    },
+
     // ======== Where() =========
     {
         desc: 'Table.populate().where()',

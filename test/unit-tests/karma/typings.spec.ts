@@ -50,7 +50,8 @@ export const typings = async () => {
 
     const populatedShallow = await Promise.all([
         db.friends.populate({ shallow: true }).get(1).then(x => x),
-        db.friends.populate({ shallow: true }).where(':id').equals(1).first().then(x => x)
+        db.friends.populate({ shallow: true }).where(':id').equals(1).first().then(x => x),
+        db.friends.populate({ shallow: true }).toArray().then(x => x[0]),
     ]);
     populatedShallow.forEach(async test => {
 
@@ -92,7 +93,8 @@ export const typings = async () => {
 
     const populatedDeep = await Promise.all([
         db.friends.populate().get(1).then(x => x),
-        db.friends.populate().where(':id').equals(1).first().then(x => x)
+        db.friends.populate().where(':id').equals(1).first().then(x => x),
+        db.friends.populate().toArray().then(x => x[0]),
     ]);
     populatedDeep.forEach(async test => {
 
@@ -136,6 +138,8 @@ export const typings = async () => {
 
     const populatedPartial = await Promise.all([
         db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).get(1).then(x => x),
+        db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).where(':id').equals(1).first().then(x => x),
+        db.friends.populate(['hasFriends', 'memberOf', 'theme', 'style']).toArray().then(x => x[0]),
     ]);
     populatedPartial.forEach(async test => {
 
@@ -192,8 +196,18 @@ export const typings = async () => {
         return value;
     });
 
+    await db.friends.toArray(value => {
+        value[0].hasFriends = [2];
+        return value;
+    });
 
-    // ===== Each (thenSchortcuts) =====
+    await db.friends.populate({ shallow: true }).toArray(value => {
+        value![0].hasFriends = [friends[1]];
+        return value;
+    });
+
+
+    // ===== Each =====
 
     await new Promise((res: (value: Friend) => void) =>
         db.friends.each(x => res(x)));

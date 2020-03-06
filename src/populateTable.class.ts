@@ -31,6 +31,22 @@ export class PopulateTable<T, TKey, B extends boolean, K extends string> {
             .then(popResult => thenShortcut(popResult));
     }
 
+    toArray(): PromiseExtended<Populated<T, B, K>[]>;
+    toArray<R>(
+        thenShortcut: ThenShortcut<Populated<T, B, K>[] | undefined, R>
+    ): PromiseExtended<R>;
+
+    public toArray<R>(
+        thenShortcut: ThenShortcut<Populated<T, B, K>[] | undefined, R> = (value: any) => value
+    ): PromiseExtended<R> {
+        return this._table.toArray()
+            .then(result => {
+                const populatedClass = new Populate<T, B, K>(result, this._keysOrOptions, this._db, this._table, this._relationalSchema);
+                return populatedClass.populated;
+            })
+            .then(popResult => thenShortcut(popResult));
+    }
+
 
     where(index: string | string[]): WhereClause<Populated<T, B, K>, TKey>;
     where(equalityCriterias: { [key: string]: IndexableType }): CollectionPopulated<Populated<T, B, K>, TKey>;

@@ -14,6 +14,7 @@ describe('HTML script tag', () => {
         await Promise.all([
             await new Promise(resolve => {
                 const script = document.createElement('script');
+                console.warn('Still using dexie@next HTML import !!!!!!!!!!!!!!!!!!!!!!!!');
                 script.src = 'https://unpkg.com/dexie@next/dist/dexie.js';
                 script.type = 'text/javascript';
                 script.onload = () => resolve();

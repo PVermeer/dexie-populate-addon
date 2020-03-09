@@ -1,6 +1,6 @@
 {
   "name": "@pvermeer/dexie-populate-addon",
-  "version": "0.0.0-development",
+  "version": "1.0.0-beta.2",
   "description": "Addon for Dexie.js database to populate relationships",
   "main": "dist/index.js",
   "module": "dist/es6/index.js",
@@ -64,6 +64,7 @@
     "faker": "^4.1.0",
     "git-branch-is": "^3.1.0",
     "husky": "^4.0.7",
+    "is-ci": "^2.0.0",
     "istanbul-instrumenter-loader": "^3.0.1",
     "jasmine": "^3.5.0",
     "jasmine-console-reporter": "^3.1.0",

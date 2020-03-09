@@ -67,7 +67,9 @@ function karmaConfig(config) {
         webpackMiddleware: {
             stats: 'errors-only'
         },
-        browsers: ['ChromeHeadless', 'FirefoxHeadless', 'EdgeHeadless'],
+        browsers: require('is-ci') ?
+            ['ChromeHeadless', 'FirefoxHeadless'] :
+            ['ChromeHeadless', 'FirefoxHeadless', 'EdgeHeadless'],
         reporters: ['dots', 'mocha', 'coverage-istanbul'],
         port: 9876,
         colors: true,

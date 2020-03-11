@@ -1,8 +1,6 @@
 import { Collection, Dexie, IndexableType, KeyRange, Table, TableSchema, Transaction, WhereClause } from 'dexie';
 import { Nominal } from 'simplytyped';
-import { WhereClauseExtended } from './populateCollection.class';
 import { RelationalDbSchema, StoreSchemas } from './schema-parser.class';
-import { TableExtended } from './tableExt.class';
 
 export interface DexieExt extends Dexie {
     pVermeerAddonsRegistered: { [addon: string]: boolean };
@@ -43,16 +41,6 @@ export type Populated<T, B extends boolean, O extends string> = {
     // Final use original type
     : T[P] : T[P]
 };
-
-declare module 'dexie' {
-
-    /**
-     * Extended Table class with populate methods
-     */
-    interface Table<T, TKey> extends TableExtended<T, TKey> { }
-    interface WhereClause<T, TKey> extends WhereClauseExtended<T, TKey> { }
-
-}
 
 type NominalRef<T, R extends string = 'Ref'> = Nominal<T, R>;
 type NominalT<T> = T extends any[] ? { [P in keyof T]: NominalRef<T[P]> | null } : NominalRef<T> | null;

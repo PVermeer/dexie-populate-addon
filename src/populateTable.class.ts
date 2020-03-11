@@ -1,6 +1,6 @@
 // tslint:disable: unified-signatures
 // tslint:disable: space-before-function-paren
-import { Collection, IndexableType, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
+import { Collection, Dexie, IndexableType, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
 import { Populate } from './populate.class';
 import { CollectionPopulated, getCollectionPopulated } from './populateCollection.class';
 import { RelationalDbSchema } from './schema-parser.class';
@@ -49,27 +49,28 @@ export class PopulateTable<T, TKey, B extends boolean, K extends string> {
 
 
     where(index: string | string[]): WhereClause<Populated<T, B, K>, TKey>;
-    where(equalityCriterias: { [key: string]: IndexableType }): CollectionPopulated<Populated<T, B, K>, TKey>;
+    where(equalityCriterias: { [key: string]: IndexableType }): CollectionPopulated<T, TKey>;
 
     public where(
         indexOrequalityCriterias: string | string[] | { [key: string]: any }
     ) {
 
-        let whereClause: WhereClause<T, TKey> | undefined;
+        const dbExt = this._db as DexieExt;
+        let whereClause: WhereClause<Populated<T, B, K>, TKey> | undefined;
         let collection: Collection<T, TKey> | undefined;
 
         const whereClauseOrCollection = this._table
-            // No combined overload so strong typed
-            .where(indexOrequalityCriterias as any) as WhereClause<T, TKey> | Collection<T, TKey>;
+            // No combined overload in Dexie so strong typed
+            .where(indexOrequalityCriterias as any) as unknown as WhereClause<Populated<T, B, K>, TKey> | Collection<T, TKey>;
 
         /*
         Check what's returned.
         Alltough typings of Dexie.js says otherwise,
         a Collection class cannot be constructed without a WhereClause
         */
-        if (whereClauseOrCollection instanceof this._db.Collection) {
+        if (whereClauseOrCollection instanceof dbExt.Collection) {
             collection = whereClauseOrCollection;
-            whereClause = this._table.where('');
+            whereClause = this._table.where('') as unknown as WhereClause<Populated<T, B, K>, TKey>;
         } else {
             whereClause = whereClauseOrCollection;
         }
@@ -82,15 +83,15 @@ export class PopulateTable<T, TKey, B extends boolean, K extends string> {
             this._relationalSchema
         );
 
-        // Override the Collection getter to return the new class
-        Object.defineProperty(whereClauseOrCollection, 'Collection', {
-            get(this) { return CollectionPopulatedClass; }
-        });
-
         if (collection) {
             const collectionPop = new CollectionPopulatedClass(whereClause, undefined, collection);
             return collectionPop;
         }
+
+        // Override the Collection getter to return the new class
+        Object.defineProperty(whereClause, 'Collection', {
+            get(this) { return CollectionPopulatedClass; }
+        });
 
         return whereClause;
 
@@ -115,8 +116,8 @@ export class PopulateTable<T, TKey, B extends boolean, K extends string> {
 
     constructor(
         private _keysOrOptions: K[] | PopulateOptions<B> | undefined,
-        private _db: DexieExt,
-        private _table: Table<any, any>,
+        private _db: Dexie,
+        private _table: Table<T, TKey>,
         private _relationalSchema: RelationalDbSchema
     ) { }
 

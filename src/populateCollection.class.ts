@@ -1,12 +1,12 @@
 // tslint:disable: space-before-function-paren
-import { Collection, IndexableType, KeyRange, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
+import { Collection, Dexie, IndexableType, KeyRange, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
 import { Populate } from './populate.class';
 import { RelationalDbSchema } from './schema-parser.class';
-import { DexieExt, Populated, PopulateOptions } from './types';
+import { Populated, PopulateOptions } from './types';
 
 // Interfaces to extend Dexie declarations. A lot of properties are not exposed :(
 export interface WhereClauseExtended<T, TKey> {
-    Collection: new (whereClause?: WhereClause | null, keyRangeGenerator?: () => KeyRange) => Collection<T, TKey>;
+    Collection: new (whereClause?: WhereClause<T, TKey> | null, keyRangeGenerator?: () => KeyRange) => Collection<T, TKey>;
 }
 
 export interface CollectionPopulated<T, TKey> extends Collection<T, TKey> { }
@@ -18,10 +18,10 @@ export interface CollectionPopulated<T, TKey> extends Collection<T, TKey> { }
  * when table.populate() is called.
  */
 export function getCollectionPopulated<T extends any, TKey, B extends boolean, K extends string>(
-    whereClause: WhereClause<T, TKey> | null | undefined,
+    whereClause: WhereClause<Populated<T, B, K>, TKey> | null | undefined,
     keysOrOptions: string[] | PopulateOptions<B> | undefined,
-    db: DexieExt,
-    table: Table,
+    db: Dexie,
+    table: Table<T, TKey>,
     relationalSchema: RelationalDbSchema
 ) {
 
@@ -62,11 +62,11 @@ export function getCollectionPopulated<T extends any, TKey, B extends boolean, K
         }
 
         constructor(
-            _whereClause?: WhereClause<T, TKey> | null,
+            _whereClause?: WhereClause<Populated<T, B, K>, TKey> | null,
             _keyRangeGenerator?: (() => KeyRange),
             _collection?: Collection<T, TKey>
         ) {
-            super(_whereClause as any, _keyRangeGenerator);
+            super(_whereClause, _keyRangeGenerator);
 
             // Because original WhereClause is not on the collection class,
             // a new class can be created and then overwritten by the Collection props

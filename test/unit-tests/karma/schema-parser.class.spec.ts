@@ -1,7 +1,7 @@
 import Dexie from 'dexie';
 import { populate } from '../../../src/populate';
 import { SchemaParser } from '../../../src/schema-parser.class';
-import { DexieExt } from '../../../src/types';
+import { DexieExtended } from '../../../src/types';
 
 class TestDatabase extends Dexie {
     constructor(name: string) {
@@ -34,17 +34,17 @@ class TestDatabaseEmptyTable extends Dexie {
 
 describe('Schema-parser class', () => {
     let db: TestDatabase;
-    let dbExt: DexieExt;
+    let dbExt: DexieExtended;
     let dbEmpty: TestDatabaseEmptyTable;
-    let dbExtEmpty: DexieExt;
+    let dbExtEmpty: DexieExtended;
 
     beforeEach(async () => {
         db = new TestDatabase('TestDatabaseSchema');
         dbEmpty = new TestDatabaseEmptyTable('TestDatabaseSchemaEmpty');
         await db.open();
         await dbEmpty.open();
-        dbExt = db as unknown as DexieExt;
-        dbExtEmpty = dbEmpty as unknown as DexieExt;
+        dbExt = db as unknown as DexieExtended;
+        dbExtEmpty = dbEmpty as unknown as DexieExtended;
     });
     afterEach(async () => {
         await db.delete();
@@ -126,7 +126,7 @@ describe('Schema-parser class', () => {
                         styles: '++id, name, color'
                     });
                 }
-            }('TestDatabaseFalseTable') as unknown as DexieExt;
+            }('TestDatabaseFalseTable') as unknown as DexieExtended;
             await db.open();
 
             const schemaParser = new SchemaParser(dbFalse._storesSpec);

@@ -1,6 +1,6 @@
-import { TableSchema, Transaction } from 'dexie';
+import { Dexie, TableSchema, Transaction } from 'dexie';
 import { PopulateTable } from './populateTable.class';
-import { DexieExt, PopulateOptions } from './types';
+import { DexieExtended, PopulateOptions } from './types';
 
 // tslint:disable: unified-signatures
 export interface TableExtended<T, TKey> {
@@ -15,13 +15,14 @@ export interface TableExtended<T, TKey> {
 }
 // tslint:enable: unified-signatures
 
-export function getTableExtended<T, TKey>(db: DexieExt) {
+export function getTableExtended<T, TKey>(db: Dexie) {
 
-    const TableClass = db.Table;
+    const dbExt = db as DexieExtended;
+    const TableClass = dbExt.Table;
 
     return class TableExt extends TableClass<T, TKey> {
 
-        public _relationalSchema = db._relationalSchema;
+        public _relationalSchema = dbExt._relationalSchema;
 
         public populate<B extends boolean = false, K extends string = string>(
             keysOrOptions?: K[] | PopulateOptions<B>

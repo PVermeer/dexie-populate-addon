@@ -1,7 +1,7 @@
 // tslint:disable: no-non-null-assertion
 import Dexie from 'dexie';
 import { cloneDeep } from 'lodash-es';
-import { DexieExt, Populated } from '../../../src/types';
+import { DexieExtended, Populated } from '../../../src/types';
 import { Club, databasesPositive, Friend, Group, HairColor, methodsNegative, methodsPositive, mockClubs, mockFriends, mockGroups, mockHairColors, mockStyles, mockThemes, Style, testDatabaseNoRelationalKeys, testDatabaseNoTableForRelationalKeys, Theme } from '../../mocks/mocks';
 
 describe('Populate', () => {
@@ -83,7 +83,7 @@ describe('Populate', () => {
                 await db.delete();
             });
             it('should have addon registered', () => {
-                const dbExt = db as unknown as DexieExt;
+                const dbExt = db as unknown as DexieExtended;
                 expect(dbExt.pVermeerAddonsRegistered.populate).toBeTrue();
             });
             it('should have extra properties', () => {

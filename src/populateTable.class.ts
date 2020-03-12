@@ -4,7 +4,7 @@ import { Collection, Dexie, IndexableType, PromiseExtended, Table, ThenShortcut,
 import { Populate } from './populate.class';
 import { CollectionPopulated, getCollectionPopulated } from './populateCollection.class';
 import { RelationalDbSchema } from './schema-parser.class';
-import { DexieExt, Populated, PopulateOptions } from './types';
+import { DexieExtended, Populated, PopulateOptions } from './types';
 
 export class PopulateTable<T, TKey, B extends boolean, K extends string> {
 
@@ -55,7 +55,7 @@ export class PopulateTable<T, TKey, B extends boolean, K extends string> {
         indexOrequalityCriterias: string | string[] | { [key: string]: any }
     ) {
 
-        const dbExt = this._db as DexieExt;
+        const dbExt = this._db as DexieExtended;
         let whereClause: WhereClause<Populated<T, B, K>, TKey> | undefined;
         let collection: Collection<T, TKey> | undefined;
 

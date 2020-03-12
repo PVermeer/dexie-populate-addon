@@ -2,7 +2,7 @@ import { Collection, Dexie, IndexableType, KeyRange, Table, TableSchema, Transac
 import { Nominal } from 'simplytyped';
 import { RelationalDbSchema, StoreSchemas } from './schema-parser.class';
 
-export interface DexieExt extends Dexie {
+export interface DexieExtended extends Dexie {
     pVermeerAddonsRegistered: { [addon: string]: boolean };
     _relationalSchema: RelationalDbSchema;
     _storesSpec: StoreSchemas;

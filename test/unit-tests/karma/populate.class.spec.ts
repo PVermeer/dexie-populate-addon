@@ -1,6 +1,6 @@
 import Dexie from 'dexie';
 import { Populate } from '../../../src/populate.class';
-import { DexieExt } from '../../../src/types';
+import { DexieExtended } from '../../../src/types';
 import { databasesPositive, Friend, mockFriends } from '../../mocks/mocks';
 
 describe('Populate class', () => {
@@ -16,9 +16,9 @@ describe('Populate class', () => {
         const populatedClass = new Populate<Friend, false, string>(
             [friend],
             { shallow: false },
-            db as unknown as DexieExt,
+            db as unknown as DexieExtended,
             db.friends,
-            (db as unknown as DexieExt)._relationalSchema
+            (db as unknown as DexieExtended)._relationalSchema
         );
         const getFriendPop = await populatedClass.populated;
         expect(getFriendPop[0].hasFriends.every(x => x instanceof Friend));

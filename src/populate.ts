@@ -2,11 +2,11 @@
 import Dexie from 'dexie';
 import { SchemaParser, StoreSchemas } from './schema-parser.class';
 import { getTableExtended } from './tableExt.class';
-import { DexieExt } from './types';
+import { DexieExtended } from './types';
 
 export function populate(db: Dexie) {
 
-    const dbExt = db as DexieExt;
+    const dbExt = db as DexieExtended;
 
     // Register addon
     dbExt.pVermeerAddonsRegistered = {
@@ -33,7 +33,7 @@ export function populate(db: Dexie) {
 
     // Extend the Table class.
     Object.defineProperty(db, 'Table', {
-        value: getTableExtended(dbExt)
+        value: getTableExtended(db)
     });
 
     db.on('ready', () => {

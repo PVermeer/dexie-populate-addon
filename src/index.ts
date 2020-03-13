@@ -2,9 +2,10 @@ import { WhereClauseExtended } from './populateCollection.class';
 import { TableExtended } from './tableExt.class';
 
 export { populate } from './populate';
+export { Populate } from './populate.class';
 export { WhereClauseExtended } from './populateCollection.class';
-export { TableExtended } from './tableExt.class';
 export { PopulateTable } from './populateTable.class';
+export { TableExtended } from './tableExt.class';
 
 declare module 'dexie' {
 

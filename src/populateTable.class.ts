@@ -24,7 +24,12 @@ export class PopulateTable<T, TKey, B extends boolean, K extends string> {
         // Not using async / await so PromiseExtended is returned
         return this._table.get(keyOrequalityCriterias)
             .then(result => {
-                const populatedClass = new Populate<T, B, K>([result], this._keysOrOptions, this._db, this._table, this._relationalSchema);
+                const populatedClass = new Populate<T, TKey, B, K>(
+                    result,
+                    this._keysOrOptions,
+                    this._db, this._table,
+                    this._relationalSchema
+                );
                 return populatedClass.populated;
             })
             .then(popResults => popResults[0])
@@ -41,7 +46,13 @@ export class PopulateTable<T, TKey, B extends boolean, K extends string> {
     ): PromiseExtended<R> {
         return this._table.toArray()
             .then(result => {
-                const populatedClass = new Populate<T, B, K>(result, this._keysOrOptions, this._db, this._table, this._relationalSchema);
+                const populatedClass = new Populate<T, TKey, B, K>(
+                    result,
+                    this._keysOrOptions,
+                    this._db,
+                    this._table,
+                    this._relationalSchema
+                );
                 return populatedClass.populated;
             })
             .then(popResult => thenShortcut(popResult));
@@ -107,7 +118,13 @@ export class PopulateTable<T, TKey, B extends boolean, K extends string> {
         const cursors: { key: IndexableType, primaryKey: TKey }[] = [];
         return this._table.each((x, y) => records.push(x) && cursors.push(y))
             .then(async () => {
-                const populatedClass = new Populate<T, B, K>(records, this._keysOrOptions, this._db, this._table, this._relationalSchema);
+                const populatedClass = new Populate<T, TKey, B, K>(
+                    records,
+                    this._keysOrOptions,
+                    this._db,
+                    this._table,
+                    this._relationalSchema
+                );
                 const recordsPop = await populatedClass.populated;
                 recordsPop.forEach((x, i) => callback(x, cursors[i]));
                 return;
@@ -115,10 +132,10 @@ export class PopulateTable<T, TKey, B extends boolean, K extends string> {
     }
 
     constructor(
-        private _keysOrOptions: K[] | PopulateOptions<B> | undefined,
-        private _db: Dexie,
-        private _table: Table<T, TKey>,
-        private _relationalSchema: RelationalDbSchema
+        protected _keysOrOptions: K[] | PopulateOptions<B> | undefined,
+        protected _db: Dexie,
+        protected _table: Table<T, TKey>,
+        protected _relationalSchema: RelationalDbSchema
     ) { }
 
 }

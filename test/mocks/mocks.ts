@@ -20,7 +20,7 @@ export class HairColor {
 
 }
 export class Style {
-    id?: number;
+    styleId?: number;
     name: string;
     color: string;
     description: string;
@@ -133,8 +133,8 @@ export const databasesPositive = [
                 this.version(1).stores({
                     friends: '++id, customId, firstName, lastName, shoeSize, age, hasFriends => friends.id, memberOf => clubs.id, group => groups.id, hairColor => hairColors.id',
                     clubs: '++id, name, theme => themes.id',
-                    themes: '++id, name, style => styles.id',
-                    styles: '++id, name, color',
+                    themes: '++id, name, style => styles.styleId',
+                    styles: '++styleId, name, color',
                     groups: '++id, name',
                     hairColors: '++id, name'
                 });

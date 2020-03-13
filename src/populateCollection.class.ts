@@ -38,7 +38,7 @@ export function getCollectionPopulated<T extends any, TKey, B extends boolean, K
             // Not using async / await so PromiseExtended is returned
             return super.toArray()
                 .then(results => {
-                    const populatedClass = new Populate<T, B, K>(results, keysOrOptions, db, table, relationalSchema);
+                    const populatedClass = new Populate<T, TKey, B, K>(results, keysOrOptions, db, table, relationalSchema);
                     return populatedClass.populated;
                 })
                 .then(popResults => thenShortcut(popResults));
@@ -54,7 +54,7 @@ export function getCollectionPopulated<T extends any, TKey, B extends boolean, K
             const cursors: { key: IndexableType, primaryKey: TKey }[] = [];
             return super.each((x, y) => records.push(x) && cursors.push(y))
                 .then(async () => {
-                    const populatedClass = new Populate<T, B, K>(records, keysOrOptions, db, table, relationalSchema);
+                    const populatedClass = new Populate<T, TKey, B, K>(records, keysOrOptions, db, table, relationalSchema);
                     const recordsPop = await populatedClass.populated;
                     recordsPop.forEach((x, i) => callback(x, cursors[i]));
                     return;

@@ -14,15 +14,49 @@ interface MappedIds {
     };
 }
 
-export class Populate<T, B extends boolean, K extends string> {
+interface PopulateTree {
+    [targetTable: string]: {
+        [targetKey: string]: {
+            [value: string]: boolean
+        }
+    };
+}
+
+export class Populate<T, TKey, B extends boolean, K extends string> {
+
+    private _records: T[];
 
     private _populated: Populated<T, B, K>[];
+
+    /**
+     * Provided selection of keys to populate in populate([]).
+     */
     private _keysToPopulate: string[] | undefined;
+
+    /**
+     * Provided options in populate({}).
+     */
     private _options: PopulateOptions<B> | undefined;
 
     /**
+     * Table and keys of documents that are populated on the result.
+     */
+    private _populatedTree: PopulateTree;
+
+    /**
+     * Get table and keys of documents that are populated on the result.
+     * @returns Memoized results, call populateRecords() to refresh.
+     */
+    public get populatedTree() {
+        return (async () => {
+            if (!this._populated) { await this.populateRecords(); }
+            return this._populatedTree;
+        })();
+    }
+
+    /**
      * Get populated documents.
-     * @returns Memoized results.
+     * @returns Memoized results, call populateRecords() to refresh.
      */
     get populated() {
         return (async () => {
@@ -44,19 +78,22 @@ export class Populate<T, B extends boolean, K extends string> {
             }
         });
 
+        const tableName = this._table.name;
         const records = await this._records;
-        const populated = cloneDeep(records);
+        this._populatedTree = {};
 
-        await this._recursivePopulate(this._table.name, populated);
+        // Update toBePopulated by assigning to references.
+        const toBePopulated = cloneDeep(records);
+        await this._recursivePopulate(tableName, toBePopulated);
 
-        this._populated = populated as Populated<T, B, K>[];
+        this._populated = toBePopulated as Populated<T, B, K>[];
         return this._populated;
     }
 
     /**
-     * Recursively populate the provided records.
+     * Recursively populate the provided records (ref based strategy).
      */
-    private _recursivePopulate = async (tableName: string, populateRefs: any[]) => {
+    private _recursivePopulate = async (tableName: string, populateRefs: T[]) => {
 
         const schema = this._relationalSchema[tableName];
         if (!schema) { return; }
@@ -74,7 +111,7 @@ export class Populate<T, B extends boolean, K extends string> {
 
                 if (
                     !schema[key] ||
-                    keysToPopulate.length && !keysToPopulate.some(x => x === key) ||
+                    (keysToPopulate.length && !keysToPopulate.some(x => x === key)) ||
                     !entry
                 ) { return; }
 
@@ -87,6 +124,11 @@ export class Populate<T, B extends boolean, K extends string> {
                 const mappedIdEntries = ids.map(id => ({ id, key, ref: record }));
 
                 acc[targetTable][targetKey] = [...acc[targetTable][targetKey], ...mappedIdEntries];
+
+                // Set mappedIds on total
+                if (!this._populatedTree[targetTable]) { this._populatedTree[targetTable] = {}; }
+                if (!this._populatedTree[targetTable][targetKey]) { this._populatedTree[targetTable][targetKey] = {}; }
+                ids.forEach(x => this._populatedTree[targetTable][targetKey][x.toString()] = true);
             });
 
             return acc;
@@ -157,12 +199,14 @@ export class Populate<T, B extends boolean, K extends string> {
     }
 
     constructor(
-        private _records: (any)[],
+        _records: T[] | T | undefined,
         keysOrOptions: string[] | PopulateOptions<B> | undefined,
         private _db: Dexie,
-        private _table: Table<any, any>,
+        private _table: Table<T, TKey>,
         private _relationalSchema: RelationalDbSchema
     ) {
+        this._records = _records ? Array.isArray(_records) ? _records : [_records] : [];
+
         if (keysOrOptions) {
             if (Array.isArray(keysOrOptions)) {
                 this._keysToPopulate = keysOrOptions;

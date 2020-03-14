@@ -1,6 +1,7 @@
 // tslint:disable: no-non-null-assertion
 import DexieType from 'dexie';
 import { populate } from '../../../src/index';
+import { OmitMethods } from '../../../src/utility-types';
 import { Friend, methodsPositive, mockFriends } from '../../mocks/mocks';
 
 declare interface DexiePopulateAddon { populate: typeof populate; }

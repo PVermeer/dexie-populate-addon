@@ -3,6 +3,7 @@ import Dexie, { PromiseExtended } from 'dexie';
 import faker from 'faker/locale/nl';
 import { populate } from '../../src/populate';
 import { Populated, Ref } from '../../src/types';
+import { OmitMethods } from '../../src/utility-types';
 
 export class HairColor {
     id?: number;

@@ -1,3 +1,17 @@
+# [1.0.0-beta.3](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2020-03-16)
+
+
+### Bug Fixes
+
+* changed class constructor inputs to normal dexie classes ([82fbd5a](https://github.com/PVermeer/dexie-populate-addon/commit/82fbd5ae62ecc9b7a90e21f72eb6c372f72781ce))
+* declarations should now work again ([7b56553](https://github.com/PVermeer/dexie-populate-addon/commit/7b56553c3559abee6c9eeb745e1ec2d2ce3c1196))
+* **typings:** import/export types in index.ts ([c14f937](https://github.com/PVermeer/dexie-populate-addon/commit/c14f937bec656d3965a7f702fb7e726ada304f01))
+
+
+### Features
+
+* **populate class:** added populatedTree method ([e506b2b](https://github.com/PVermeer/dexie-populate-addon/commit/e506b2ba2faa5026a33b91c1c29a7e58ca3ef42a))
+
 # [1.0.0-beta.2](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2020-03-06)
 
 

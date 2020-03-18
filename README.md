@@ -206,7 +206,7 @@ class FriendsDatabase extends Dexie {
     }
 }
 
-const db = new FriendDatabase('FriendsDatabase', secret);
+const db = new FriendDatabase('FriendsDatabase');
 
 // Open the database
 db.open()

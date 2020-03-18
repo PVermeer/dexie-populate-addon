@@ -1,16 +1,15 @@
 // tslint:disable: no-non-null-assertion
 import DexieType from 'dexie';
+import { cloneDeep } from 'lodash';
 import { populate } from '../../../src/index';
-import { OmitMethods } from '../../../src/utility-types';
-import { Friend, methodsPositive, mockFriends } from '../../mocks/mocks';
+import { Populated } from '../../../src/types';
+import { databasesPositive, Friend, mockFriends } from '../../mocks/mocks';
 
 declare interface DexiePopulateAddon { populate: typeof populate; }
 declare const Dexie: typeof DexieType;
 declare const DexiePopulateAddon: DexiePopulateAddon;
 
-type HTMLDb = DexieType & { friends: DexieType.Table<OmitMethods<Friend>, number> };
-
-describe('HTML script tag', () => {
+describe('HTML script tag (Still using dexie@next HTML import)', () => {
     beforeAll(async () => {
         await Promise.all([
             await new Promise(resolve => {
@@ -37,61 +36,49 @@ describe('HTML script tag', () => {
         expect(DexiePopulateAddon).toBeTruthy();
         expect(DexiePopulateAddon.populate).toBeTruthy();
     });
-    describe('Database HTML', () => {
-        let db: HTMLDb;
-        beforeEach(async () => {
-            db = new Dexie('TestDatabaseHTML', {
-                addons: [DexiePopulateAddon.populate]
-            }) as HTMLDb;
-            db.version(1).stores({
-                friends: '++id, customId, firstName, lastName, shoeSize, age, hasFriends => friends.id, memberOf => clubs.id, group => groups.id, hairColor => hairColors.id',
-                clubs: '++id, name, theme => themes.id',
-                themes: '++id, name, style => styles.id',
-                styles: '++id, name, color',
-                groups: '++id, name',
-                hairColors: '++id, name'
+    databasesPositive.forEach(database => {
+        describe(database.desc, () => {
+            let db: ReturnType<typeof database.db>;
+            beforeEach(async () => {
+                db = database.db(Dexie, DexiePopulateAddon.populate);
+                await db.open();
+                expect(db.isOpen()).toBeTrue();
             });
-            await db.open();
-            expect(db.isOpen()).toBeTrue();
-        });
-        afterEach(async () => {
-            await db.delete();
-        });
-        it('should be able to use normally', async () => {
-            const [friend] = mockFriends(1);
-            const id = await db.friends.add(friend);
-            const getFriend = await db.friends.get(id);
-            expect({ ...getFriend }).toEqual({ ...friend });
-        });
-        describe('Methods', () => {
-            methodsPositive.forEach((_method, _j) => {
+            afterEach(async () => {
+                await db.delete();
+            });
+            it('should be able to use normally', async () => {
+                const [friend] = mockFriends(1);
+                const id = await db.friends.add(friend);
+                const getFriend = await db.friends.get(id);
+                expect({ ...getFriend }).toEqual({ ...friend });
+            });
+            describe('Methods', () => {
                 // if (_j !== 0) { return; }
-                let hasFriends: OmitMethods<Friend>[];
-                let friend: OmitMethods<Friend>;
+                let hasFriends: Friend[];
+                let friend: Friend;
                 let id: number;
-                let hasFriendsIds: number[];
-                let method: ReturnType<typeof _method.method>;
+                let hasFriendIds: number[];
+                let friendPop: Populated<Friend, false, string>;
 
-                describe(_method.desc, () => {
+                describe('Populate', () => {
                     beforeEach(async () => {
                         const friends = mockFriends();
                         [friend, ...hasFriends] = friends;
-                        friend = { ...friend };
                         id = await db.friends.add(friend);
-                        hasFriendsIds = await db.friends.bulkAdd(hasFriends, { allKeys: true });
-                        hasFriends = hasFriends.map((x, i) => ({ ...x, id: hasFriendsIds[i] }));
+                        hasFriendIds = await Promise.all(hasFriends.map(x => db.friends.add(x)));
+                        // hasFriends = hasFriends.map((x, i) => ({ ...x, id: hasFriendsIds[i] }));
                         db.friends.update(id, {
-                            hasFriends: hasFriendsIds
+                            hasFriends: hasFriendIds
                         });
-                        method = _method.method(db as any);
+                        friend.hasFriends = hasFriendIds;
+                        friendPop = cloneDeep(friend) as Populated<Friend, false, string>;
+                        friendPop.hasFriends = cloneDeep(hasFriends) as Populated<Friend, false, string>[];
                     });
-                    if (_method.populated) {
-                        it('should be able to use populate()', async () => {
-                            const getFriend = await method(id);
-                            const expected = { ...friend, hasFriends };
-                            expect(getFriend).toEqual(expected as any);
-                        });
-                    }
+                    it('should be able to use populate()', async () => {
+                        const getFriend = await db.friends.populate().get(id);
+                        expect(getFriend).toEqual(friendPop);
+                    });
                 });
             });
         });

@@ -1,12 +1,13 @@
 // tslint:disable: no-non-null-assertion
 import Dexie from 'dexie';
 import { cloneDeep } from 'lodash-es';
+import { populate } from '../../../src';
 import { DexieExtended, Populated } from '../../../src/types';
 import { Club, databasesPositive, Friend, Group, HairColor, methodsNegative, methodsPositive, mockClubs, mockFriends, mockGroups, mockHairColors, mockStyles, mockThemes, Style, testDatabaseNoRelationalKeys, testDatabaseNoTableForRelationalKeys, Theme } from '../../mocks/mocks';
 
 describe('Populate', () => {
     databasesPositive.forEach((database, _i) => {
-        // if (_i !== 4) { return; }
+        // if (_i !== 0) { return; }
         describe(database.desc, () => {
             let db: ReturnType<typeof database.db>;
 
@@ -34,7 +35,7 @@ describe('Populate', () => {
             let hairColorIds: number[];
 
             beforeEach(async () => {
-                db = database.db(Dexie);
+                db = database.db(Dexie, populate);
                 await db.open();
                 expect(db.isOpen()).toBeTrue();
 
@@ -73,11 +74,19 @@ describe('Populate', () => {
 
                 friend.hasFriends = hasFriendIds;
                 friend.memberOf = clubIds;
+                friend.group = groupIds[1];
+                friend.hairColor = hairColorIds[1];
+
+                const hasFriendsPop = cloneDeep(hasFriends) as Populated<Friend, false, string>[];
+                hasFriendsPop[1].hasFriends[0] = hasFriends[2] as Populated<Friend, false, string>;
 
                 friendPop = cloneDeep(friend) as Populated<Friend, false, string>;
-                friendPop.hasFriends = hasFriends as Populated<Friend, false, string>[];
+                friendPop.hasFriends = hasFriendsPop;
                 friendPop.memberOf = clubs as Populated<Club, false, string>[];
-                friendPop.memberOf[0]!.theme = themes[0] as Populated<Theme, false, string>;
+                friendPop.memberOf[1]!.theme = themes[1] as Populated<Theme, false, string>;
+                friendPop.memberOf[1]!.theme.style = styles[1];
+                friendPop.group = groups[1];
+                friendPop.hairColor = hairColors[1];
             });
             afterEach(async () => {
                 await db.delete();
@@ -103,107 +112,138 @@ describe('Populate', () => {
                         });
                         if (_method.populated) {
                             describe('Populated', () => {
-                                it('should be populated with friends', async () => {
-                                    const getFriend = await method(id);
-                                    expect(getFriend!.hasFriends!.every((x: any) => x instanceof Friend)).toBeTrue();
-                                });
-                                it('should be populated with friends deep', async () => {
-                                    const getFriend = await method(id);
-                                    expect(
-                                        (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[1]
-                                            .hasFriends![0] instanceof Friend
-                                    ).toBeTrue();
-                                });
-                                it('should be populated with clubs', async () => {
-                                    const getFriend = await method(id);
-                                    expect(getFriend!.memberOf!.every((x: any) => x instanceof Club)).toBeTrue();
-                                });
-                                it('should be null if not found', async () => {
-                                    await db.friends.update(updateId, {
-                                        hasFriends: [9999],
-                                        hairColor: 8888
+                                if (_method.index) {
+                                    describe('Indices', () => {
+                                        it('should index memberOf', async () => {
+                                            const getFriend = await method(groupIds[1]);
+                                            expect(getFriend).toEqual(friendPop);
+                                        });
+                                        if (_method.multiIndex) {
+                                            it('should multiIndex memberOf', async () => {
+                                                const getFriend = await method(clubIds[1]);
+                                                expect(getFriend).toEqual(friendPop);
+                                            });
+                                        }
                                     });
-                                    const getFriend = await method(id);
-                                    expect(getFriend!.hasFriends![0]).toBe(null);
-                                    expect(getFriend!.hairColor).toBe(null);
-                                });
-                                it('should be null if not found deep', async () => {
-                                    await db.friends.update(hasFriendIds[0], {
-                                        hasFriends: [9999],
-                                        hairColor: 8888
-                                    });
-                                    const getFriend = await method(id);
-                                    expect(
-                                        (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[0].hasFriends![0]
-                                    ).toBe(null);
-                                    expect(
-                                        (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[0].group
-                                    ).toBe(null);
-                                });
-                                if (!_method.desc.endsWith('each()')) {
-                                    it('should throw when circulair references are found', async () => {
-                                        await db.friends.update(updateId, { hasFriends: [id] });
-                                        await expectAsync(method(id) as Promise<any>)
-                                            .toBeRejectedWithError('DEXIE POPULATE: Circular reference detected on \'hasFriends\'. \'hasFriends\' Probably contains a reference to itself.');
-                                    });
-                                }
-                                if (!_method.populatedPartial) {
-                                    it('should be populated with a group', async () => {
+                                } else {
+                                    it('should be populated with friends', async () => {
                                         const getFriend = await method(id);
-                                        expect(getFriend!.group! instanceof Group).toBeTrue();
+                                        expect(getFriend!.hasFriends!.every((x: any) => x instanceof Friend)).toBeTrue();
                                     });
-                                    it('should be populated with club => theme deep', async () => {
+                                    it('should be populated with friends deep', async () => {
                                         const getFriend = await method(id);
                                         expect(
-                                            (getFriend!.memberOf! as (Populated<Club, false, string>)[])[1]
-                                                .theme instanceof Theme
+                                            (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[1]
+                                                .hasFriends![0] instanceof Friend
                                         ).toBeTrue();
                                     });
-                                }
-                                if (_method.populatedPartial) {
-                                    it('should be populated with theme', async () => {
+                                    it('should be populated with clubs', async () => {
                                         const getFriend = await method(id);
-                                        expect((getFriend!.memberOf![1]! as Club).theme instanceof Theme).toBeTrue();
+                                        expect(getFriend!.memberOf!.every((x: any) => x instanceof Club)).toBeTrue();
                                     });
-                                    it('should be populated with style', async () => {
+                                    it('should be null if not found', async () => {
+                                        await db.friends.update(updateId, {
+                                            hasFriends: [9999],
+                                            hairColor: 8888
+                                        });
                                         const getFriend = await method(id);
-                                        expect(((getFriend!.memberOf![1]! as Club).theme as Theme).style instanceof Style).toBeTrue();
+                                        expect(getFriend!.hasFriends![0]).toBe(null);
+                                        expect(getFriend!.hairColor).toBe(null);
                                     });
-                                    it('should not be populated with group', async () => {
+                                    it('should be null if not found deep', async () => {
+                                        await db.friends.update(hasFriendIds[0], {
+                                            hasFriends: [9999],
+                                            hairColor: 8888
+                                        });
                                         const getFriend = await method(id);
-                                        expect(typeof getFriend!.group! === 'number').toBeTrue();
-                                    });
-                                }
-                            });
-                            describe('Shallow', () => {
-                                if (!_method.populatedPartial) { // Does nothing for partial population (yet?)
-                                    it('should not be populated with friends deep', async () => {
-                                        const getFriend = await method(id, true);
                                         expect(
-                                            typeof (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[1]
-                                                .hasFriends![0] === 'number'
-                                        ).toBeTrue();
-                                    });
-                                    it('should not be populated with clubs deep', async () => {
-                                        const getFriend = await method(id, true);
+                                            (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[0].hasFriends![0]
+                                        ).toBe(null);
                                         expect(
-                                            typeof (getFriend!.memberOf! as (Populated<Club, false, string>)[])[1]
-                                                .theme === 'number'
-                                        ).toBeTrue();
+                                            (getFriend!.hasFriends! as (Populated<Friend, false, string>)[])[0].group
+                                        ).toBe(null);
+                                    });
+                                    if (!_method.desc.endsWith('each()')) {
+                                        it('should throw when circulair references are found', async () => {
+                                            await db.friends.update(updateId, { hasFriends: [id] });
+                                            await expectAsync(method(id) as Promise<any>)
+                                                .toBeRejectedWithError('DEXIE POPULATE: Circular reference detected on \'hasFriends\'. \'hasFriends\' Probably contains a reference to itself.');
+                                        });
+                                    }
+                                    if (_method.populatedPartial) {
+                                        it('should be populated with theme', async () => {
+                                            const getFriend = await method(id);
+                                            expect((getFriend!.memberOf![1]! as Club).theme instanceof Theme).toBeTrue();
+                                        });
+                                        it('should be populated with style', async () => {
+                                            const getFriend = await method(id);
+                                            expect(((getFriend!.memberOf![1]! as Club).theme as Theme).style instanceof Style).toBeTrue();
+                                        });
+                                        it('should not be populated with group', async () => {
+                                            const getFriend = await method(id);
+                                            expect(typeof getFriend!.group! === 'number').toBeTrue();
+                                        });
+                                    } else {
+                                        it('should be populated with a group', async () => {
+                                            const getFriend = await method(id);
+                                            expect(getFriend!.group! instanceof Group).toBeTrue();
+                                        });
+                                        it('should be populated with club => theme deep', async () => {
+                                            const getFriend = await method(id);
+                                            expect(
+                                                (getFriend!.memberOf! as (Populated<Club, false, string>)[])[1]
+                                                    .theme instanceof Theme
+                                            ).toBeTrue();
+                                        });
+                                    }
+                                    describe('Shallow', () => {
+                                        // Partial population cannot have shallow for now
+                                        if (!_method.populatedPartial) {
+                                            it('should not be populated with friends deep', async () => {
+                                                const getFriend = await method(id, true);
+                                                expect(
+                                                    (getFriend?.hasFriends as Friend[])
+                                                        .every(x => x.hasFriends
+                                                            .every((y: any) => typeof y === 'number'))
+                                                ).toBeTrue();
+                                            });
+                                            it('should not be populated with clubs deep', async () => {
+                                                const getFriend = await method(id, true);
+                                                expect(
+                                                    (getFriend?.memberOf as Club[])
+                                                        .every((x: any) => !(x.theme instanceof Theme))
+                                                ).toBeTrue();
+                                            });
+                                        }
                                     });
                                 }
                             });
                         }
                         if (!_method.populated) {
                             describe('Normal', () => {
-                                it('should not be populated with friends', async () => {
-                                    const getFriend = await method(id);
-                                    expect(getFriend!.hasFriends!.every((x: any) => typeof x === 'number')).toBeTrue();
-                                });
-                                it('should not be populated with clubs', async () => {
-                                    const getFriend = await method(id);
-                                    expect(getFriend!.hasFriends!.every((x: any) => typeof x === 'number')).toBeTrue();
-                                });
+                                if (_method.index) {
+                                    describe('Indices', () => {
+                                        it('should index memberOf', async () => {
+                                            const getFriend = await method(groupIds[1]);
+                                            expect(getFriend).toEqual(friend);
+                                        });
+                                        if (_method.multiIndex) {
+                                            it('should multiIndex memberOf', async () => {
+                                                const getFriend = await method(clubIds[1]);
+                                                expect(getFriend).toEqual(friend);
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    it('should not be populated with friends', async () => {
+                                        const getFriend = await method(id);
+                                        expect(getFriend!.hasFriends!.every((x: any) => typeof x === 'number')).toBeTrue();
+                                    });
+                                    it('should not be populated with clubs', async () => {
+                                        const getFriend = await method(id);
+                                        expect(getFriend!.hasFriends!.every((x: any) => typeof x === 'number')).toBeTrue();
+                                    });
+                                }
                             });
                         }
                     });

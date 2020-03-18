@@ -1,7 +1,7 @@
 // tslint:disable: space-before-function-paren // Conflict with default formatter vscode
 import Dexie from 'dexie';
 import { SchemaParser, StoreSchemas } from './schema-parser.class';
-import { getTableExtended } from './tableExt.class';
+import { getTableExtended } from './table-extended.class';
 import { DexieExtended } from './types';
 
 export function populate(db: Dexie) {

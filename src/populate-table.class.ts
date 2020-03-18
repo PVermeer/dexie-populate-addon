@@ -1,8 +1,8 @@
 // tslint:disable: unified-signatures
 // tslint:disable: space-before-function-paren
 import { Collection, Dexie, IndexableType, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
+import { CollectionPopulated, getCollectionPopulated } from './populate-collection.class';
 import { Populate } from './populate.class';
-import { CollectionPopulated, getCollectionPopulated } from './populateCollection.class';
 import { RelationalDbSchema } from './schema-parser.class';
 import { DexieExtended, Populated, PopulateOptions } from './types';
 

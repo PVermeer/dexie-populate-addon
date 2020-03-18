@@ -1,3 +1,15 @@
+# [1.0.0-beta.4](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2020-03-18)
+
+
+### Bug Fixes
+
+* compound and mult-index should now work ([bc42ff0](https://github.com/PVermeer/dexie-populate-addon/commit/bc42ff0f040fd7b0723d61b882fba13daf561079))
+
+
+### Features
+
+* **readme:** added documentation ([1c4a5ac](https://github.com/PVermeer/dexie-populate-addon/commit/1c4a5ac50aa854922d6f0b0059d5db271845a6f3))
+
 # [1.0.0-beta.3](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2020-03-16)
 
 

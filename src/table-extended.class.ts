@@ -1,5 +1,5 @@
 import { Dexie, TableSchema, Transaction } from 'dexie';
-import { PopulateTable } from './populateTable.class';
+import { PopulateTable } from './populate-table.class';
 import { DexieExtended, PopulateOptions } from './types';
 
 // tslint:disable: unified-signatures

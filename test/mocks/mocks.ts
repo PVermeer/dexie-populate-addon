@@ -115,10 +115,12 @@ export class Friend {
     }
 }
 
+type TestDatabaseType = Dexie & { friends: Dexie.Table<Friend, number> };
+
 export const databasesPositive = [
     {
         desc: 'TestDatabase',
-        db: (dexie: typeof Dexie) => new class TestDatabase extends dexie {
+        db: (dexie: typeof Dexie, addon: typeof populate) => new class TestDatabase extends dexie {
 
             public friends: Dexie.Table<Friend, number>;
             public clubs: Dexie.Table<Club, number>;
@@ -129,10 +131,10 @@ export const databasesPositive = [
 
             constructor(name: string) {
                 super(name);
-                populate(this);
+                addon(this);
                 this.on('blocked', () => false);
                 this.version(1).stores({
-                    friends: '++id, customId, firstName, lastName, shoeSize, age, hasFriends => friends.id, memberOf => clubs.id, group => groups.id, hairColor => hairColors.id',
+                    friends: '++id, &customId, firstName, lastName, shoeSize, age, hasFriends => friends.id, *memberOf => clubs.id, group => groups.id, &hairColor => hairColors.id, [id+group]',
                     clubs: '++id, name, theme => themes.id',
                     themes: '++id, name, style => styles.styleId',
                     styles: '++styleId, name, color',
@@ -178,7 +180,6 @@ export const testDatabaseNoTableForRelationalKeys = (dexie: typeof Dexie) =>
 
 export const databasesNegative = [];
 
-type TestDatabaseType = Dexie & { friends: Dexie.Table<Friend, number> };
 
 export const methodsPositive = [
 
@@ -190,9 +191,15 @@ export const methodsPositive = [
             db.friends.populate({ shallow: _shallow }).get(_id).then(x => x!)
     },
     {
+        desc: 'Table.populate().get({ group: id })',
+        index: true,
+        populated: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).get({ group: _id }).then(x => x!)
+    },
+    {
         desc: `Table.populate().get(cb)`,
         populated: true,
-        populatedPartial: false,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
             db.friends.populate({ shallow: _shallow }).get(_id, cb => cb)
     },
@@ -208,6 +215,13 @@ export const methodsPositive = [
         populated: false,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
             db.friends.get(_id).then(x => x!)
+    },
+    {
+        desc: 'Table.get({ group: id })',
+        index: true,
+        populated: false,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.get({ group: _id }).then(x => x!)
     },
 
     // ======== toArray() =========
@@ -246,6 +260,28 @@ export const methodsPositive = [
             db.friends.populate({ shallow: _shallow }).where(':id').equals(_id).first()
     },
     {
+        desc: `Table.populate().where('group')`,
+        populated: true,
+        index: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).where('group').equals(_id).first()
+    },
+    {
+        desc: 'Table.populate().where({ group: id })',
+        populated: true,
+        index: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).where({ group: _id }).first()
+    },
+    {
+        desc: `Table.populate().where('memberOf')`,
+        populated: true,
+        index: true,
+        multiIndex: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).where('memberOf').equals(_id).first()
+    },
+    {
         desc: 'Table.populate().where(cb)',
         populated: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
@@ -277,6 +313,21 @@ export const methodsPositive = [
         method: (db: TestDatabaseType) => (id: number, _shallow = false) =>
             db.friends.where({ id }).first()
     },
+    {
+        desc: 'Table.where({ group: id })',
+        populated: false,
+        index: true,
+        method: (db: TestDatabaseType) => (id: number, _shallow = false) =>
+            db.friends.where({ group: id }).first()
+    },
+    {
+        desc: `Table.populate().where('memberOf')`,
+        populated: false,
+        index: true,
+        multiIndex: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.where('memberOf').equals(_id).first()
+    },
 
     // ======== Where().toArray() =========
     {
@@ -290,6 +341,28 @@ export const methodsPositive = [
         populated: true,
         method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
             db.friends.populate({ shallow: _shallow }).where(':id').equals(_id).toArray(x => x[0])
+    },
+
+    // ======== Where().anyOf() =========
+    {
+        desc: 'Table.populate().where().anyOf()',
+        populated: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).where(':id').anyOf(_id).first()
+    },
+
+    // ======== Compound =========
+    {
+        desc: `Table.populate().where('[group+age]')`,
+        populated: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).where('[id+group]').equals([_id, 2]).first()
+    },
+    {
+        desc: `Table.populate().where({ id: _id, group: 2 })`,
+        populated: true,
+        method: (db: TestDatabaseType) => (_id: number, _shallow = false) =>
+            db.friends.populate({ shallow: _shallow }).where({ id: _id, group: 2 }).first()
     },
 
     // ======== Each() =========

@@ -25,8 +25,11 @@ export class SchemaParser {
                 .filter(x => x.includes('=>'))
                 .reduce<RelationalKeys>((relObj, x) => {
                     const split = x.split('=>').map(y => y.trim());
+                    const relationalKey = split[0]
+                        .replace('*', '')
+                        .replace('&', '');
                     const [targetTable, targetKey] = split[1].split('.').map(y => y.trim());
-                    return { ...relObj, [split[0]]: { targetTable, targetKey } };
+                    return { ...relObj, [relationalKey]: { targetTable, targetKey } };
                 }, {});
 
             if (!Object.keys(relationalKeys).length) { return acc; }

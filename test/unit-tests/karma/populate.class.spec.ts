@@ -1,6 +1,7 @@
 // tslint:disable: no-non-null-assertion
 import Dexie from 'dexie';
 import { cloneDeep } from 'lodash';
+import { populate } from '../../../src';
 import { Populate } from '../../../src/populate.class';
 import { DexieExtended, Populated } from '../../../src/types';
 import { Club, databasesPositive, Friend, mockClubs, mockFriends, mockGroups, mockHairColors, mockStyles, mockThemes, Style, Theme } from '../../mocks/mocks';
@@ -22,7 +23,7 @@ describe('Populate class', () => {
     let populatedClass: Populate<Friend, number, false, string>;
 
     beforeEach(async () => {
-        db = databasesPositive[0].db(Dexie);
+        db = databasesPositive[0].db(Dexie, populate);
         friends = mockFriends();
         [friend, ...hasFriends] = friends;
 
@@ -134,25 +135,25 @@ describe('Populate class', () => {
         expect(popWith).toEqual(expected);
     });
     it('should return [] when input === undefined || [] on populated getter', async () => {
-        const populate = new Populate<Friend, number, false, string>(
+        const populateC = new Populate<Friend, number, false, string>(
             undefined,
             { shallow: false },
             db as unknown as DexieExtended,
             db.friends,
             (db as unknown as DexieExtended)._relationalSchema
         );
-        const populated = await populate.populated;
+        const populated = await populateC.populated;
         expect(populated).toEqual([]);
     });
     it('should return {} when input === undefined || [] on Tree getter', async () => {
-        const populate = new Populate<Friend, number, false, string>(
+        const populateC = new Populate<Friend, number, false, string>(
             undefined,
             { shallow: false },
             db as unknown as DexieExtended,
             db.friends,
             (db as unknown as DexieExtended)._relationalSchema
         );
-        const populatedTree = await populate.populatedTree;
+        const populatedTree = await populateC.populatedTree;
         expect(populatedTree).toEqual({});
     });
 

@@ -1,11 +1,12 @@
 // tslint:disable: no-non-null-assertion
 import Dexie from 'dexie';
 import { cloneDeep } from 'lodash-es';
+import { populate } from '../../../src';
 import { Populated } from '../../../src/types';
 import { databasesPositive, Friend, Group, mockClubs, mockFriends, mockGroups, mockStyles, mockThemes } from '../../mocks/mocks';
 
 export const typings = async () => {
-    const db = databasesPositive[0].db(Dexie);
+    const db = databasesPositive[0].db(Dexie, populate);
     await db.open();
     expect(db.isOpen()).toBeTrue();
     // Just some type matching, should not error in IDE / compilation or test

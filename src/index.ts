@@ -1,11 +1,11 @@
-import { WhereClauseExtended } from './populateCollection.class';
-import { TableExtended } from './tableExt.class';
+import { WhereClauseExtended } from './populate-collection.class';
+import { TableExtended } from './table-extended.class';
 
 export { populate } from './populate';
+export { WhereClauseExtended } from './populate-collection.class';
+export { PopulateTable } from './populate-table.class';
 export { Populate } from './populate.class';
-export { WhereClauseExtended } from './populateCollection.class';
-export { PopulateTable } from './populateTable.class';
-export { TableExtended } from './tableExt.class';
+export { TableExtended } from './table-extended.class';
 
 declare module 'dexie' {
 

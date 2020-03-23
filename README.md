@@ -3,7 +3,7 @@ Dexie Populate Addon
 
 [![NPM Version](https://img.shields.io/npm/v/@pvermeer/dexie-populate-addon/latest.svg)](https://www.npmjs.com/package/@pvermeer/dexie-populate-addon)
 [![NPM Version](https://img.shields.io/npm/v/@pvermeer/dexie-populate-addon/beta.svg)](https://www.npmjs.com/package/@pvermeer/dexie-populate-addon)
-[![Build Status](https://travis-ci.org/PVermeer/dexie-populate-addon.svg?branch=master)](https://travis-ci.org/PVermeer/dexie-populate-addon)
+[![Build Status](https://travis-ci.com/PVermeer/dexie-populate-addon.svg?branch=master)](https://travis-ci.com/PVermeer/dexie-populate-addon)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
@@ -206,7 +206,7 @@ class FriendsDatabase extends Dexie {
     }
 }
 
-const db = new FriendDatabase('FriendsDatabase', secret);
+const db = new FriendDatabase('FriendsDatabase');
 
 // Open the database
 db.open()

@@ -1,3 +1,11 @@
+# [1.0.0-beta.5](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2020-03-23)
+
+
+### Bug Fixes
+
+* **declarations:** added support for older TS versions ([ac18bf5](https://github.com/PVermeer/dexie-populate-addon/commit/ac18bf500200bf64e6d7a875b8ac68e8bcc9d9f8))
+* **readme:** typo ([1969198](https://github.com/PVermeer/dexie-populate-addon/commit/1969198e52f2efad5bdb152bb580032570708f46))
+
 # [1.0.0-beta.4](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2020-03-18)
 
 

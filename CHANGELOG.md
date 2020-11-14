@@ -1,3 +1,10 @@
+# [1.0.0-beta.6](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.5...v1.0.0-beta.6) (2020-11-14)
+
+
+### Features
+
+* **dexie-3:** updated to dexie 3 + dockerized environment ([12287f9](https://github.com/PVermeer/dexie-populate-addon/commit/12287f9986789bb2089935dddc0637746a8f70a3))
+
 # [1.0.0-beta.5](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2020-03-23)
 
 

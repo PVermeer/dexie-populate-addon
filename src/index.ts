@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import { WhereClauseExtended } from './populate-collection.class';
 import { TableExtended } from './table-extended.class';
 

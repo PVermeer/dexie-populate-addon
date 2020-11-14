@@ -43,7 +43,6 @@ export function populate(db: Dexie) {
         }
 
         if (Object.values(dbExt._relationalSchema).some(table => Object.values(table).some(x => !db[x.targetTable]))) {
-            db.close();
             throw new Error('DEXIE POPULATE: Relation schema does not match the db tables, now closing database');
         }
 

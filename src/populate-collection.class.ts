@@ -1,12 +1,12 @@
 // tslint:disable: space-before-function-paren
-import { Collection, Dexie, IndexableType, KeyRange, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
+import { Collection, DBCoreKeyRange, Dexie, IndexableType, PromiseExtended, Table, ThenShortcut, WhereClause } from 'dexie';
 import { Populate } from './populate.class';
 import { RelationalDbSchema } from './schema-parser.class';
 import { Populated, PopulateOptions } from './types';
 
 // Interfaces to extend Dexie declarations. A lot of properties are not exposed :(
 export interface WhereClauseExtended<T, TKey> {
-    Collection: new (whereClause?: WhereClause<T, TKey> | null, keyRangeGenerator?: () => KeyRange) => Collection<T, TKey>;
+    Collection: new (whereClause?: WhereClause<any, TKey> | null, keyRangeGenerator?: () => DBCoreKeyRange) => Collection<T, TKey>;
 }
 
 export interface CollectionPopulated<T, TKey> extends Collection<T, TKey> { }
@@ -63,7 +63,7 @@ export function getCollectionPopulated<T extends any, TKey, B extends boolean, K
 
         constructor(
             _whereClause?: WhereClause<Populated<T, B, K>, TKey> | null,
-            _keyRangeGenerator?: (() => KeyRange),
+            _keyRangeGenerator?: (() => DBCoreKeyRange),
             _collection?: Collection<T, TKey>
         ) {
             super(_whereClause, _keyRangeGenerator);

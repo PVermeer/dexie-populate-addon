@@ -1,3 +1,44 @@
+# [1.0.0-beta.6](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.5...v1.0.0-beta.6) (2020-11-14)
+
+
+### Features
+
+* **dexie-3:** updated to dexie 3 + dockerized environment ([12287f9](https://github.com/PVermeer/dexie-populate-addon/commit/12287f9986789bb2089935dddc0637746a8f70a3))
+
+# [1.0.0-beta.5](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2020-03-23)
+
+
+### Bug Fixes
+
+* **declarations:** added support for older TS versions ([ac18bf5](https://github.com/PVermeer/dexie-populate-addon/commit/ac18bf500200bf64e6d7a875b8ac68e8bcc9d9f8))
+* **readme:** typo ([1969198](https://github.com/PVermeer/dexie-populate-addon/commit/1969198e52f2efad5bdb152bb580032570708f46))
+
+# [1.0.0-beta.4](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2020-03-18)
+
+
+### Bug Fixes
+
+* compound and mult-index should now work ([bc42ff0](https://github.com/PVermeer/dexie-populate-addon/commit/bc42ff0f040fd7b0723d61b882fba13daf561079))
+
+
+### Features
+
+* **readme:** added documentation ([1c4a5ac](https://github.com/PVermeer/dexie-populate-addon/commit/1c4a5ac50aa854922d6f0b0059d5db271845a6f3))
+
+# [1.0.0-beta.3](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2020-03-16)
+
+
+### Bug Fixes
+
+* changed class constructor inputs to normal dexie classes ([82fbd5a](https://github.com/PVermeer/dexie-populate-addon/commit/82fbd5ae62ecc9b7a90e21f72eb6c372f72781ce))
+* declarations should now work again ([7b56553](https://github.com/PVermeer/dexie-populate-addon/commit/7b56553c3559abee6c9eeb745e1ec2d2ce3c1196))
+* **typings:** import/export types in index.ts ([c14f937](https://github.com/PVermeer/dexie-populate-addon/commit/c14f937bec656d3965a7f702fb7e726ada304f01))
+
+
+### Features
+
+* **populate class:** added populatedTree method ([e506b2b](https://github.com/PVermeer/dexie-populate-addon/commit/e506b2ba2faa5026a33b91c1c29a7e58ca3ef42a))
+
 # [1.0.0-beta.2](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2020-03-06)
 
 

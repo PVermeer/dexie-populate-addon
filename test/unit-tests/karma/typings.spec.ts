@@ -1,6 +1,6 @@
 // tslint:disable: no-non-null-assertion
 import Dexie from 'dexie';
-import { cloneDeep } from 'lodash-es';
+import cloneDeep from 'lodash.clonedeep';
 import { populate } from '../../../src';
 import { Populated } from '../../../src/types';
 import { databasesPositive, Friend, Group, mockClubs, mockFriends, mockGroups, mockStyles, mockThemes } from '../../mocks/mocks';

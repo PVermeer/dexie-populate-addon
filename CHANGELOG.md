@@ -1,3 +1,10 @@
+# [1.0.0-beta.7](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.6...v1.0.0-beta.7) (2020-11-22)
+
+
+### Bug Fixes
+
+* **build:** do not require full lodash as a dependency ([0d1bcae](https://github.com/PVermeer/dexie-populate-addon/commit/0d1bcaead8c5991185f2243d96d7bc8cd2e71cda))
+
 # [1.0.0-beta.6](https://github.com/PVermeer/dexie-populate-addon/compare/v1.0.0-beta.5...v1.0.0-beta.6) (2020-11-14)
 
 

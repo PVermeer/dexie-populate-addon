@@ -1,6 +1,10 @@
 // tslint:disable: unified-signatures
 import { Dexie, IndexableType, Table } from 'dexie';
-import { cloneDeep, flatten, isEqual, uniqBy } from 'lodash';
+import cloneDeep from 'lodash.clonedeep';
+import flatten from 'lodash.flatten';
+import isEqual from 'lodash.isequal';
+import uniqBy from 'lodash.uniqby';
+
 import { RelationalDbSchema } from './schema-parser.class';
 import { Populated, PopulateOptions } from './types';
 

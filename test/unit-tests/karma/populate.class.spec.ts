@@ -1,6 +1,6 @@
 // tslint:disable: no-non-null-assertion
 import Dexie from 'dexie';
-import { cloneDeep } from 'lodash';
+import cloneDeep from 'lodash.clonedeep';
 import { populate } from '../../../src';
 import { Populate } from '../../../src/populate.class';
 import { DexieExtended, Populated } from '../../../src/types';
